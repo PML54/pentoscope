@@ -89,6 +89,7 @@ class SolutionStats extends Table {
   DateTimeColumn get lastPlayed => dateTime().nullable()();
 }
 
+
 // ✨ MAINTENANT la classe (après la fonction et les tables)
 @DriftDatabase(tables: [Settings, GameSessions, SolutionStats])
 class SettingsDatabase extends _$SettingsDatabase {
@@ -285,4 +286,5 @@ class SettingsDatabase extends _$SettingsDatabase {
       'bestScore': bestScore,
     };
   }
+
 }

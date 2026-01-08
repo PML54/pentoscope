@@ -11,8 +11,10 @@ import 'package:pentapol/common/pentominos.dart';
 import 'package:pentapol/providers/settings_provider.dart';
 import 'package:pentapol/config/game_icons_config.dart';
 import 'package:pentapol/pentoscope/pentoscope_provider.dart';
+import 'package:pentapol/pentoscope/pentoscope_generator.dart';
 import 'package:pentapol/pentoscope/widgets/pentoscope_board.dart';
 import 'package:pentapol/pentoscope/widgets/pentoscope_piece_slider.dart';
+import 'package:pentapol/pentoscope_multiplayer/screens/pentoscope_mp_lobby_screen.dart';
 import 'package:pentapol/config/ui_sizes_config.dart';
 
 /// ⏱️ Formate le temps en secondes (max 999s) - format compact
@@ -119,6 +121,20 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
           actions: (isPlacedPieceSelected || isSliderPieceSelected)
               ? null
               : [
+            // ➕ Bouton augmenter taille plateau
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              color: Colors.blue,
+              onPressed: () => _showSizeChangeDialog(context, ref),
+              tooltip: 'Changer taille plateau',
+            ),
+            // 👥 Bouton multijoueur
+            IconButton(
+              icon: const Icon(Icons.people_outline),
+              color: Colors.purple,
+              onPressed: () => _navigateToMultiplayer(context),
+              tooltip: 'Mode multijoueur',
+            ),
             // 👁️ Bouton voir adversaire
             IconButton(
               icon: Icon(
@@ -963,6 +979,54 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
             color: GameIcons.removePiece.color,
           ),
       ],
+    );
+  }
+
+  /// 📏 Affiche le dialogue de changement de taille de plateau
+  void _showSizeChangeDialog(BuildContext context, WidgetRef ref) {
+    final currentSize = ref.read(pentoscopeProvider).puzzle?.size;
+    final notifier = ref.read(pentoscopeProvider.notifier);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Changer la taille du plateau'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Sélectionnez la nouvelle taille :'),
+            const SizedBox(height: 16),
+            ...PentoscopeSize.values.map((size) => RadioListTile<PentoscopeSize>(
+              title: Text('${size.label} (${size.width}x${size.height})'),
+              subtitle: Text('${size.numPieces} pièces'),
+              value: size,
+              groupValue: currentSize,
+              onChanged: (value) {
+                Navigator.pop(context);
+                if (value != null && value != currentSize) {
+                  notifier.changeBoardSize(value);
+                }
+              },
+            )),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 👥 Navigation vers le mode multijoueur
+  void _navigateToMultiplayer(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PentoscopeMPLobbyScreen(),
+      ),
     );
   }
 }

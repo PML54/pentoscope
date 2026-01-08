@@ -169,7 +169,7 @@ class PentoscopeBoard extends ConsumerWidget {
               child: Container(
                 width: gridWidth,
                 height: gridHeight,
-                  decoration: BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -255,7 +255,20 @@ class PentoscopeBoard extends ConsumerWidget {
       bool isLandscape,
       ) {
     // 1️⃣ RÉCUPÉRER LES DONNÉES DE BASE
-    final cellValue = state.plateau.getCell(logicalX, logicalY);
+    var cellValue = state.plateau.getCell(logicalX, logicalY);
+
+    // 🐛 FIX: Si cette cellule appartient à une pièce sélectionnée (en cours de déplacement),
+    // ne pas l'afficher à son ancienne position
+    if (state.selectedPlacedPiece != null) {
+      // Vérifier si cette cellule fait partie de la pièce sélectionnée
+      final selectedPiece = state.selectedPlacedPiece!;
+      for (final cell in selectedPiece.absoluteCells) {
+        if (cell.x == logicalX && cell.y == logicalY) {
+          cellValue = 0; // Masquer cette cellule de la pièce sélectionnée
+          break;
+        }
+      }
+    }
     final isSolutionCell = _isSolutionCell(state, logicalX, logicalY);
     final solutionPieceId = _getSolutionPieceIdAt(state, logicalX, logicalY);
 

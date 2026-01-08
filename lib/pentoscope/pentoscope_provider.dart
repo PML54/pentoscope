@@ -7,6 +7,7 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pentapol/common/pentominos.dart';
 import 'package:pentapol/common/plateau.dart';
 import 'package:pentapol/common/point.dart';
@@ -637,6 +638,44 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
     startTimer();
   }
 
+  /// 🔄 Change la taille du plateau (redémarre avec un nouveau puzzle)
+  Future<void> changeBoardSize(PentoscopeSize newSize) async {
+    // Sauvegarder le temps actuel pour le niveau actuel
+    final currentTime = getElapsedSeconds();
+
+    // Générer un nouveau puzzle avec la nouvelle taille
+    await startPuzzle(
+      newSize,
+      difficulty: PentoscopeDifficulty.random,
+      showSolution: false,
+    );
+
+    debugPrint('📏 Plateau changé vers ${newSize.label} (${newSize.width}x${newSize.height})');
+  }
+
+  /// 💾 Sauvegarder le niveau terminé
+  Future<void> _saveCompletedLevel() async {
+    if (state.puzzle == null) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final progressData = {
+        'boardSize': '${state.puzzle!.size.width}x${state.puzzle!.size.height}',
+        'pieceIds': state.puzzle!.pieceIds.join(','),
+        'completionTime': getElapsedSeconds(),
+        'completedAt': DateTime.now().toIso8601String(),
+      };
+
+      // Sauvegarder sous forme de chaîne JSON-like
+      final progressString = progressData.entries.map((e) => '${e.key}:${e.value}').join('|');
+      await prefs.setString('pentoscope_last_completed', progressString);
+
+      debugPrint('💾 Niveau sauvegardé: ${state.puzzle!.size.label}, temps: ${getElapsedSeconds()}s');
+    } catch (e) {
+      debugPrint('❌ Erreur lors de la sauvegarde du niveau: $e');
+    }
+  }
+
   // ==========================================================================
   // PLACEMENT
   // ==========================================================================
@@ -717,6 +756,8 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
     // ⏱️ Arrêter le timer si puzzle complet
     if (isComplete) {
       stopTimer();
+      // 💾 Sauvegarder le progrès du niveau réussi
+      _saveCompletedLevel();
     }
 
     // 💡 HINT: Vérifier si une solution est encore possible

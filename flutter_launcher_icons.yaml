@@ -1,0 +1,39 @@
+# Configuration pour la génération des icônes de l'application Pentapol
+# Utilise assets/pentopol.png comme source
+
+flutter_launcher_icons:
+  # Plateformes
+  android: true
+  ios: true
+  
+  # Image source (doit être au moins 1024x1024 pour meilleure qualité)
+  image_path: "assets/pentopol.png"
+  
+  # Android - Icônes adaptatives (Android 8.0+)
+  adaptive_icon_background: "#FFFFFF"  # Fond blanc
+  adaptive_icon_foreground: "assets/pentopol.png"
+  
+  # iOS - Retirer le canal alpha (requis par Apple)
+  remove_alpha_ios: true
+  
+  # Web - Génération des icônes web
+  web:
+    generate: true
+    image_path: "assets/pentopol.png"
+    background_color: "#FFFFFF"
+    theme_color: "#2196F3"
+  
+  # Windows (optionnel)
+  windows:
+    generate: true
+    image_path: "assets/pentopol.png"
+    icon_size: 48
+  
+  # macOS (optionnel)
+  macos:
+    generate: true
+    image_path: "assets/pentopol.png"
+
+
+
+

@@ -32,6 +32,20 @@ class _PentoscopeMPLobbyScreenState extends ConsumerState<PentoscopeMPLobbyScree
   @override
   void initState() {
     super.initState();
+
+    // TEST IMMÉDIAT : notification au lancement
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🎯 Lobby chargé - test DB'),
+            duration: Duration(seconds: 1),
+            backgroundColor: Colors.purple,
+          ),
+        );
+      }
+    });
+
     _loadSavedPlayerName();
   }
 
