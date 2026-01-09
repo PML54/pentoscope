@@ -15,7 +15,7 @@ import 'package:pentapol/pentoscope/pentoscope_generator.dart';
 import 'package:pentapol/pentoscope/widgets/pentoscope_board.dart';
 import 'package:pentapol/pentoscope/widgets/pentoscope_piece_slider.dart';
 import 'package:pentapol/pentoscope_multiplayer/screens/pentoscope_mp_lobby_screen.dart';
-import 'package:pentapol/config/ui_sizes_config.dart';
+
 
 /// ⏱️ Formate le temps en secondes (max 999s) - format compact
 String _formatTime(int seconds) {
@@ -71,11 +71,7 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.red),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    // ⏱️ Chronomètre
+                    // ⏱️ Chronomètre (sans croix rouge en mode solo)
                     Text(
                       _formatTime(state.elapsedSeconds),
                       style: const TextStyle(
@@ -88,34 +84,12 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
                 ),
           leadingWidth: (isPlacedPieceSelected || isSliderPieceSelected) ? 0 : 100,
           // 🔑 En mode transformation: icônes isométrie pleine largeur
-          title: (isPlacedPieceSelected || isSliderPieceSelected)
-              ? _buildFullWidthIsometryBar(state, notifier)
-              : state.isComplete
-              ? TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.elasticOut,
-            builder: (context, value, child) {
-              return Transform.scale(
-                scale: value,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Indicateurs de performance
-                    Icon(Icons.rotate_right, size: 14, color: Colors.blue.shade600),
-                    Text('${state.isometryCount}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
-                    const SizedBox(width: 6),
-                    Icon(Icons.open_with, size: 14, color: Colors.purple.shade600),
-                    Text('${state.translationCount}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
-                    const SizedBox(width: 6),
-                    Icon(Icons.delete_outline, size: 14, color: Colors.red.shade600),
-                    Text('${state.deleteCount}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
-                  ],
-                ),
-              );
-            },
-          )
-              : null,
+            title: (isPlacedPieceSelected || isSliderPieceSelected)
+                ? _buildFullWidthIsometryBar(state, notifier)
+                : null,
+
+
+
           centerTitle: true,
           // 🔑 En mode transformation: pas d'actions, tout est dans le title
           actions: (isPlacedPieceSelected || isSliderPieceSelected)
@@ -990,15 +964,15 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Changer la taille du plateau'),
+        title: const Text('taille du plateau'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Sélectionnez la nouvelle taille :'),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: 10),
             ...PentoscopeSize.values.map((size) => RadioListTile<PentoscopeSize>(
               title: Text('${size.label} (${size.width}x${size.height})'),
-              subtitle: Text('${size.numPieces} pièces'),
+
               value: size,
               groupValue: currentSize,
               onChanged: (value) {

@@ -92,7 +92,7 @@ class _PentoscopeMenuScreenState extends ConsumerState<PentoscopeMenuScreen> {
                     ),
                   ),
                   child: const Text(
-                    'Jouer Solo',
+                    'Solo',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),

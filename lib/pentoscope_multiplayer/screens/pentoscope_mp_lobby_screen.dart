@@ -25,9 +25,8 @@ class _PentoscopeMPLobbyScreenState extends ConsumerState<PentoscopeMPLobbyScree
   final _playerNameController = TextEditingController();
   final _roomCodeController = TextEditingController();
   final _db = SettingsDatabase();
-  
-  PentoscopeSize _selectedSize = PentoscopeSize.size5x5;
-  bool _isCreating = true; // true = créer, false = rejoindre
+
+  bool _showJoinInput = false; // true = montrer le champ code, false = montrer les boutons principaux
 
   @override
   void initState() {
@@ -144,116 +143,82 @@ class _PentoscopeMPLobbyScreenState extends ConsumerState<PentoscopeMPLobbyScree
           ),
           
           const SizedBox(height: 32),
-          
-          // Tabs Créer / Rejoindre
-          Row(
-            children: [
-              Expanded(
-                child: _buildTabButton(
-                  'Créer',
-                  Icons.add_circle_outline,
-                  _isCreating,
-                  () => setState(() => _isCreating = true),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildTabButton(
-                  'Rejoindre',
-                  Icons.login,
-                  !_isCreating,
-                  () => setState(() => _isCreating = false),
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Contenu selon le mode
+
+          // Contenu selon l'état
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
-            child: _isCreating ? _buildCreateSection() : _buildJoinSection(),
+            child: _showJoinInput ? _buildJoinInputSection() : _buildMainButtonsSection(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTabButton(String label, IconData icon, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).primaryColor : Colors.grey[200],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? Theme.of(context).primaryColor : Colors.grey[300]!,
-            width: 2,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: isSelected ? Colors.white : Colors.grey[600], size: 20),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCreateSection() {
+  Widget _buildMainButtonsSection() {
     return Column(
-      key: const ValueKey('create'),
+      key: const ValueKey('main_buttons'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Sélecteur de taille
-        const Text(
-          'Format du plateau',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 12),
-        _buildSizeSelector(),
-        
-        const SizedBox(height: 24),
-        
-        // Bouton Créer
+        // Bouton Créer une Partie
         ElevatedButton.icon(
-          onPressed: _createRoom,
-          icon: const Icon(Icons.play_arrow),
-          label: const Text('Créer la partie'),
+          onPressed: () async {
+            final name = _playerNameController.text.trim();
+            if (name.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Entre ton pseudo')),
+              );
+              return;
+            }
+            await _savePlayerName(name);
+            await ref.read(pentoscopeMPProvider.notifier).createRoom(
+              playerName: name,
+              size: PentoscopeSize.size5x5, // Taille par défaut pour simplifier
+            );
+          },
+          icon: const Icon(Icons.add_circle_outline),
+          label: const Text('Créer une Partie'),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Bouton Rejoindre une Partie
+        OutlinedButton.icon(
+          onPressed: () => setState(() => _showJoinInput = true),
+          icon: const Icon(Icons.login),
+          label: const Text('Rejoindre une Partie'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            side: BorderSide(color: Theme.of(context).primaryColor),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildJoinSection() {
+  Widget _buildJoinInputSection() {
     return Column(
-      key: const ValueKey('join'),
+      key: const ValueKey('join_input'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Code de la room
         TextField(
           controller: _roomCodeController,
+          autofocus: true,
           decoration: InputDecoration(
             labelText: 'Code de la room',
             hintText: 'Ex: ABCD',
             prefixIcon: const Icon(Icons.tag),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => setState(() => _showJoinInput = false),
+              tooltip: 'Retour',
+            ),
           ),
           textCapitalization: TextCapitalization.characters,
           maxLength: 4,
@@ -262,14 +227,14 @@ class _PentoscopeMPLobbyScreenState extends ConsumerState<PentoscopeMPLobbyScree
             UpperCaseTextFormatter(),
           ],
         ),
-        
+
         const SizedBox(height: 16),
-        
-        // Bouton Rejoindre
+
+        // Bouton Go
         ElevatedButton.icon(
           onPressed: _joinRoom,
-          icon: const Icon(Icons.login),
-          label: const Text('Rejoindre'),
+          icon: const Icon(Icons.play_arrow),
+          label: const Text('Go'),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -279,34 +244,6 @@ class _PentoscopeMPLobbyScreenState extends ConsumerState<PentoscopeMPLobbyScree
     );
   }
 
-  Widget _buildSizeSelector() {
-    return Row(
-      children: PentoscopeSize.values.map((size) {
-        final isSelected = size == _selectedSize;
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => setState(() => _selectedSize = size),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: isSelected ? Theme.of(context).primaryColor : Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                size.label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : Colors.black87,
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
 
   // ==========================================================================
   // VUE: Connexion en cours
@@ -601,23 +538,6 @@ class _PentoscopeMPLobbyScreenState extends ConsumerState<PentoscopeMPLobbyScree
   // ACTIONS
   // ==========================================================================
 
-  Future<void> _createRoom() async {
-    final name = _playerNameController.text.trim();
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Entre ton pseudo')),
-      );
-      return;
-    }
-
-    // Sauvegarder le nom pour la prochaine fois
-    await _savePlayerName(name);
-
-    await ref.read(pentoscopeMPProvider.notifier).createRoom(
-      playerName: name,
-      size: _selectedSize,
-    );
-  }
 
   Future<void> _joinRoom() async {
     final name = _playerNameController.text.trim();

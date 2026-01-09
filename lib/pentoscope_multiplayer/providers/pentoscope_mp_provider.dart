@@ -471,7 +471,10 @@ class PentoscopeMPNotifier extends Notifier<PentoscopeMPState> {
 
   void _handlePlayerCompleted(PlayerCompletedMessage msg) {
     debugPrint('[MP] 🏆 ${msg.playerName} a terminé en ${msg.timeMs ~/ 1000}s (rang ${msg.rank})');
-    
+
+    // 🕒 Arrêter le chrono dès qu'un joueur termine
+    stopTimer();
+
     final updatedPlayers = state.players.map((p) {
       if (p.id == msg.playerId) {
         return p.copyWith(
@@ -481,8 +484,12 @@ class PentoscopeMPNotifier extends Notifier<PentoscopeMPState> {
       }
       return p;
     }).toList();
-    
-    state = state.copyWith(players: updatedPlayers);
+
+    // 🏁 Quand le premier joueur termine, arrêter la partie pour tous !
+    state = state.copyWith(
+      gameState: PentoscopeMPGameState.finished,
+      players: updatedPlayers,
+    );
   }
 
   void _handleGameEnd(GameEndMessage msg) {
@@ -577,6 +584,33 @@ class PentoscopeMPNotifier extends Notifier<PentoscopeMPState> {
         state = state.copyWith(elapsedSeconds: elapsed);
       }
     });
+  }
+
+  // ==========================================================================
+  // ⏱️ TIMER METHODS
+  // ==========================================================================
+
+  /// Démarre le chronomètre
+  void startTimer() {
+    if (_gameTimer != null) return; // Déjà démarré
+
+    _startTime = DateTime.now();
+    _gameTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      final elapsed = getElapsedSeconds();
+      state = state.copyWith(elapsedSeconds: elapsed);
+    });
+  }
+
+  /// Arrête le chronomètre
+  void stopTimer() {
+    _gameTimer?.cancel();
+    _gameTimer = null;
+  }
+
+  /// Retourne le temps écoulé en secondes
+  int getElapsedSeconds() {
+    if (_startTime == null) return 0;
+    return DateTime.now().difference(_startTime!).inSeconds;
   }
 
   Future<void> _cleanup() async {
