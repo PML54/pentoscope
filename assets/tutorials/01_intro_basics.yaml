@@ -36,6 +36,15 @@ steps:
   - command: SCROLL_SLIDER_TO_PIECE
     params:
       pieceNumber: 5
+  # Highlight première pièce
+  - command: SCROLL_SLIDER_TO_PIECE
+    params:
+      pieceNumber: 4
+
+  # Highlight première pièce
+  - command: SCROLL_SLIDER_TO_PIECE
+    params:
+      pieceNumber: 3
 
   - command: HIGHLIGHT_PIECE_IN_SLIDER
     params:

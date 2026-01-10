@@ -12,13 +12,64 @@ import 'package:pentapol/providers/settings_provider.dart';
 import 'package:pentapol/screens/pentomino_game/widgets/shared/piece_border_calculator.dart';
 import 'package:pentapol/screens/pentomino_game/widgets/shared/piece_renderer.dart';
 
-class PentoscopeBoard extends ConsumerWidget {
+class PentoscopeBoard extends ConsumerStatefulWidget {
   final bool isLandscape;
 
   const PentoscopeBoard({super.key, required this.isLandscape});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PentoscopeBoard> createState() => _PentoscopeBoardState();
+
+  // Méthode statique pour accéder au state depuis l'extérieur
+  static _PentoscopeBoardState? of(BuildContext context) {
+    return context.findAncestorStateOfType<_PentoscopeBoardState>();
+  }
+}
+
+class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
+  final List<Map<String, dynamic>> _highlightedCells = [];
+
+  // Méthodes publiques pour le tutoriel
+  void highlightCell(int x, int y, Color color) {
+    setState(() {
+      // Supprimer l'ancien highlight à cette position s'il existe
+      _highlightedCells.removeWhere((cell) => cell['x'] == x && cell['y'] == y);
+      // Ajouter le nouveau highlight
+      _highlightedCells.add({'x': x, 'y': y, 'color': color});
+    });
+  }
+
+  void clearHighlights() {
+    setState(() {
+      _highlightedCells.clear();
+    });
+  }
+
+  void placeSelectedPiece(int gridX, int gridY) {
+    // Pour l'instant, on simule le placement en utilisant la logique du drag & drop
+    // Le tutoriel devra utiliser une approche différente
+    print('[BOARD] Placement simulé en ($gridX, $gridY)');
+  }
+
+  void selectPieceOnBoard(int x, int y) {
+    final notifier = ref.read(pentoscopeProvider.notifier);
+    final state = ref.read(pentoscopeProvider);
+
+    // Chercher la pièce à cette position
+    final placedPieces = state.placedPieces;
+    for (final placed in placedPieces) {
+      for (final cell in placed.absoluteCells) {
+        if (cell.x == x && cell.y == y) {
+          notifier.selectPlacedPiece(placed, x, y);
+          return;
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = context as WidgetRef;
     final state = ref.watch(pentoscopeProvider);
     final notifier = ref.read(pentoscopeProvider.notifier);
     final settings = ref.read(settingsProvider);
@@ -27,7 +78,7 @@ class PentoscopeBoard extends ConsumerWidget {
     // ✅ Ne PAS modifier le provider pendant le build.
     // On reporte l'info d'orientation après la frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      notifier.setViewOrientation(isLandscape);
+      notifier.setViewOrientation(widget.isLandscape);
     });
 
     final puzzle = state.puzzle;
@@ -41,12 +92,12 @@ class PentoscopeBoard extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Dimensions visuelles (swap si paysage)
-        final visualCols = isLandscape ? boardHeight : boardWidth;
-        final visualRows = isLandscape ? boardWidth : boardHeight;
+        final visualCols = widget.isLandscape ? boardHeight : boardWidth;
+        final visualRows = widget.isLandscape ? boardWidth : boardHeight;
 
         // Réserver 8px de marge uniquement en portrait (largeur limitée)
         // En paysage, pas besoin de marge car le plateau a plus d'espace
-        final availableWidth = isLandscape ? constraints.maxWidth : constraints.maxWidth - 8;
+        final availableWidth = widget.isLandscape ? constraints.maxWidth : constraints.maxWidth - 8;
         final cellSize = (availableWidth / visualCols)
             .clamp(0.0, constraints.maxHeight / visualRows)
             .toDouble();
@@ -100,7 +151,7 @@ class PentoscopeBoard extends ConsumerWidget {
             );
 
             int logicalX, logicalY;
-            if (isLandscape) {
+            if (widget.isLandscape) {
               logicalX = (visualRows - 1) - visualY;
               logicalY = visualX;
             } else {
@@ -165,7 +216,7 @@ class PentoscopeBoard extends ConsumerWidget {
             return Align(
               // En paysage: aligner en haut pour éviter l'espace
               // En portrait: centrer
-              alignment: isLandscape ? Alignment.topCenter : Alignment.center,
+              alignment: widget.isLandscape ? Alignment.topCenter : Alignment.center,
               child: Container(
                 width: gridWidth,
                 height: gridHeight,
@@ -207,7 +258,7 @@ class PentoscopeBoard extends ConsumerWidget {
                       final visualY = index ~/ visualCols;
 
                       int logicalX, logicalY;
-                      if (isLandscape) {
+                      if (widget.isLandscape) {
                         logicalX = (visualRows - 1) - visualY;
                         logicalY = visualX;
                       } else {
@@ -223,7 +274,7 @@ class PentoscopeBoard extends ConsumerWidget {
                         settings,
                         logicalX,
                         logicalY,
-                        isLandscape,
+                        widget.isLandscape,
                       );
                     },
                   ),
@@ -353,6 +404,21 @@ class PentoscopeBoard extends ConsumerWidget {
       logicalY,
       isLandscape,
     );
+
+    // 🎯 6.5️⃣ APPLIQUER LES HIGHLIGHTS DU TUTORIEL
+    final tutorialHighlight = _highlightedCells.firstWhere(
+      (cell) => cell['x'] == logicalX && cell['y'] == logicalY,
+      orElse: () => <String, dynamic>{},
+    );
+
+    if (tutorialHighlight.isNotEmpty) {
+      cellColor = tutorialHighlight['color'] as Color;
+      // Ajouter un effet visuel supplémentaire
+      border = Border.all(
+        color: Colors.white,
+        width: 3,
+      );
+    }
 
     // 7️⃣ CRÉER LE WIDGET DE CELLULE
     Widget cellWidget = Container(

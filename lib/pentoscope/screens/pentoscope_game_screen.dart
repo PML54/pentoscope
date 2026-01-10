@@ -15,7 +15,8 @@ import 'package:pentapol/pentoscope/pentoscope_generator.dart';
 import 'package:pentapol/pentoscope/widgets/pentoscope_board.dart';
 import 'package:pentapol/pentoscope/widgets/pentoscope_piece_slider.dart';
 import 'package:pentapol/pentoscope_multiplayer/screens/pentoscope_mp_lobby_screen.dart';
-
+import 'package:pentapol/tutorial/pentoscope/screens/pentoscope_game_with_tutorial_screen.dart';
+import 'package:pentapol/config/ui_sizes_config.dart';
 
 /// ⏱️ Formate le temps en secondes (max 999s) - format compact
 String _formatTime(int seconds) {
@@ -71,7 +72,11 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // ⏱️ Chronomètre (sans croix rouge en mode solo)
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    // ⏱️ Chronomètre
                     Text(
                       _formatTime(state.elapsedSeconds),
                       style: const TextStyle(
@@ -84,12 +89,34 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
                 ),
           leadingWidth: (isPlacedPieceSelected || isSliderPieceSelected) ? 0 : 100,
           // 🔑 En mode transformation: icônes isométrie pleine largeur
-            title: (isPlacedPieceSelected || isSliderPieceSelected)
-                ? _buildFullWidthIsometryBar(state, notifier)
-                : null,
-
-
-
+          title: (isPlacedPieceSelected || isSliderPieceSelected)
+              ? _buildFullWidthIsometryBar(state, notifier)
+              : state.isComplete
+              ? TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.elasticOut,
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: value,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Indicateurs de performance
+                    Icon(Icons.rotate_right, size: 14, color: Colors.blue.shade600),
+                    Text('${state.isometryCount}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                    const SizedBox(width: 6),
+                    Icon(Icons.open_with, size: 14, color: Colors.purple.shade600),
+                    Text('${state.translationCount}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                    const SizedBox(width: 6),
+                    Icon(Icons.delete_outline, size: 14, color: Colors.red.shade600),
+                    Text('${state.deleteCount}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                  ],
+                ),
+              );
+            },
+          )
+              : null,
           centerTitle: true,
           // 🔑 En mode transformation: pas d'actions, tout est dans le title
           actions: (isPlacedPieceSelected || isSliderPieceSelected)
@@ -148,6 +175,23 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
                 },
                 tooltip: 'Indice',
               ),
+            // 🎓 Tutoriel
+            IconButton(
+              icon: const Icon(Icons.school_outlined),
+              color: Colors.teal,
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PentoscopeGameWithTutorialScreen(
+                      tutorialPath: 'assets/tutorials/01_intro_basics.yaml',
+                    ),
+                  ),
+                );
+              },
+              tooltip: 'Tutoriel',
+            ),
           ],
         ),
       ),
@@ -848,6 +892,23 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
                           },
                           tooltip: 'Indice',
                         ),
+                      // 🎓 Tutoriel
+                      IconButton(
+                        icon: Icon(Icons.school_outlined, size: iconSize),
+                        color: Colors.teal,
+                        onPressed: () {
+                          HapticFeedback.selectionClick();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PentoscopeGameWithTutorialScreen(
+                                tutorialPath: 'assets/tutorials/01_intro_basics.yaml',
+                              ),
+                            ),
+                          );
+                        },
+                        tooltip: 'Tutoriel',
+                      ),
                       IconButton(
                         icon: Icon(Icons.close, size: iconSize),
                         onPressed: () => Navigator.pop(context),
@@ -964,12 +1025,12 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('taille du plateau'),
+        title: const Text('Changer la taille du plateau'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-
-            const SizedBox(height: 10),
+            const Text('Sélectionnez la nouvelle taille :'),
+            const SizedBox(height: 16),
             ...PentoscopeSize.values.map((size) => RadioListTile<PentoscopeSize>(
               title: Text('${size.label} (${size.width}x${size.height})'),
 
