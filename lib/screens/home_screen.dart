@@ -12,6 +12,7 @@ import 'package:pentapol/debug/database_debug_screen.dart';
 
 
 
+
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -90,7 +91,6 @@ class HomeScreen extends ConsumerWidget {
                             );
                           },
                         ),
-                        const SizedBox(height: 12),
                         _MenuCard(
                           icon: Icons.extension,
                           title: 'Pentominos Classique',

@@ -15,7 +15,7 @@ import 'package:pentapol/pentoscope/pentoscope_generator.dart';
 import 'package:pentapol/pentoscope/widgets/pentoscope_board.dart';
 import 'package:pentapol/pentoscope/widgets/pentoscope_piece_slider.dart';
 import 'package:pentapol/pentoscope_multiplayer/screens/pentoscope_mp_lobby_screen.dart';
-import 'package:pentapol/tutorial/pentoscope/screens/pentoscope_game_with_tutorial_screen.dart';
+import 'package:pentapol/screens/demo_screen.dart';
 import 'package:pentapol/config/ui_sizes_config.dart';
 
 /// ⏱️ Formate le temps en secondes (max 999s) - format compact
@@ -175,22 +175,20 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
                 },
                 tooltip: 'Indice',
               ),
-            // 🎓 Tutoriel
+            // 🎬 Démo automatique
             IconButton(
-              icon: const Icon(Icons.school_outlined),
+              icon: const Icon(Icons.play_circle_outline),
               color: Colors.teal,
               onPressed: () {
                 HapticFeedback.selectionClick();
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const PentoscopeGameWithTutorialScreen(
-                      tutorialPath: 'assets/tutorials/01_intro_basics.yaml',
-                    ),
+                    builder: (_) => const DemoScreen(),
                   ),
                 );
               },
-              tooltip: 'Tutoriel',
+              tooltip: 'Démo automatique',
             ),
           ],
         ),
@@ -892,22 +890,20 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
                           },
                           tooltip: 'Indice',
                         ),
-                      // 🎓 Tutoriel
+                      // 🎬 Démo automatique
                       IconButton(
-                        icon: Icon(Icons.school_outlined, size: iconSize),
+                        icon: Icon(Icons.play_circle_outline, size: iconSize),
                         color: Colors.teal,
                         onPressed: () {
                           HapticFeedback.selectionClick();
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const PentoscopeGameWithTutorialScreen(
-                                tutorialPath: 'assets/tutorials/01_intro_basics.yaml',
-                              ),
+                              builder: (_) => const DemoScreen(),
                             ),
                           );
                         },
-                        tooltip: 'Tutoriel',
+                        tooltip: 'Démo automatique',
                       ),
                       IconButton(
                         icon: Icon(Icons.close, size: iconSize),
