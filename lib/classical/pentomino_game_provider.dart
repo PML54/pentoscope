@@ -39,24 +39,53 @@ class PentominoGameNotifier extends Notifier<PentominoGameState> {
   /// Applique une rotation 90° horaire
   void applyIsometryRotationCW() {
     debugPrint(
-      "ISO: RotCW (view=${state.viewOrientation}) idx=${state.selectedPositionIndex} piece=${state.selectedPiece?.id}",
+      "ISO: RotCW (view=${state.viewOrientation}) idx=${state.selectedPositionIndex} piece=${state.selectedPiece?.id} placed=${state.selectedPlacedPiece?.piece.id}",
     );
+
+    // Pour les pièces placées, appliquer une rotation spécifique
+    if (state.selectedPlacedPiece != null) {
+      _applyRotationToPlacedPiece(isClockwise: true);
+      return;
+    }
+
+    // Pour les pièces du slider, rotation normale
     _applyIsoUsingLookup((p, idx) => p.rotationCW(idx));
   }
 
   /// Applique une rotation 90° anti-horaire
   void applyIsometryRotationTW() {
     debugPrint(
-      "ISO: RotTW (view=${state.viewOrientation}) idx=${state.selectedPositionIndex} piece=${state.selectedPiece?.id}",
+      "ISO: RotTW (view=${state.viewOrientation}) idx=${state.selectedPositionIndex} piece=${state.selectedPiece?.id} placed=${state.selectedPlacedPiece?.piece.id}",
     );
+
+    // Pour les pièces placées, appliquer une rotation spécifique
+    if (state.selectedPlacedPiece != null) {
+      _applyRotationToPlacedPiece(isClockwise: false);
+      return;
+    }
+
+    // Pour les pièces du slider, rotation normale
     _applyIsoUsingLookup((p, idx) => p.rotationTW(idx));
   }
 
   /// Applique une symétrie (H/V swap en paysage)
   void applyIsometrySymmetryH() {
     debugPrint(
-      "ISO: SymH (view=${state.viewOrientation}) idx=${state.selectedPositionIndex} piece=${state.selectedPiece?.id}",
+      "ISO: SymH (view=${state.viewOrientation}) idx=${state.selectedPositionIndex} piece=${state.selectedPiece?.id} placed=${state.selectedPlacedPiece?.piece.id}",
     );
+
+    // Pour les pièces placées, appliquer la symétrie relative à la mastercase si définie
+    if (state.selectedPlacedPiece != null) {
+      if (state.selectedCellInPiece != null) {
+        _applySymmetryWithMastercase(isHorizontal: true);
+      } else {
+        // Comportement classique si pas de mastercase
+        _applySymmetryToPlacedPiece(isHorizontal: true);
+      }
+      return;
+    }
+
+    // Pour les pièces du slider, comportement classique
     if (state.viewOrientation == ViewOrientation.landscape) {
       _applyIsoUsingLookup((p, idx) => p.symmetryV(idx));
     } else {
@@ -67,8 +96,21 @@ class PentominoGameNotifier extends Notifier<PentominoGameState> {
   /// Applique une symétrie verticale (V/H swap en paysage)
   void applyIsometrySymmetryV() {
     debugPrint(
-      "ISO: SymV (view=${state.viewOrientation}) idx=${state.selectedPositionIndex} piece=${state.selectedPiece?.id}",
+      "ISO: SymV (view=${state.viewOrientation}) idx=${state.selectedPositionIndex} piece=${state.selectedPiece?.id} placed=${state.selectedPlacedPiece?.piece.id}",
     );
+
+    // Pour les pièces placées, appliquer la symétrie relative à la mastercase si définie
+    if (state.selectedPlacedPiece != null) {
+      if (state.selectedCellInPiece != null) {
+        _applySymmetryWithMastercase(isHorizontal: false);
+      } else {
+        // Comportement classique si pas de mastercase
+        _applySymmetryToPlacedPiece(isHorizontal: false);
+      }
+      return;
+    }
+
+    // Pour les pièces du slider, comportement classique
     if (state.viewOrientation == ViewOrientation.landscape) {
       _applyIsoUsingLookup((p, idx) => p.symmetryH(idx));
     } else {
@@ -1589,6 +1631,96 @@ class PentominoGameNotifier extends Notifier<PentominoGameState> {
     return null;
   }
 
+
+  /// Applique une symétrie relative à la mastercase pour une pièce placée
+  void _applySymmetryWithMastercase({required bool isHorizontal}) {
+    final placedPiece = state.selectedPlacedPiece;
+    if (placedPiece == null || state.selectedCellInPiece == null) return;
+
+    final piece = placedPiece.piece;
+    final currentIndex = placedPiece.positionIndex;
+    final mastercase = state.selectedCellInPiece!;
+
+    // Appliquer la symétrie relative à la mastercase
+    final newIndex = isHorizontal
+        ? piece.symmetryHRelativeToMastercase(currentIndex, mastercase)
+        : piece.symmetryVRelativeToMastercase(currentIndex, mastercase);
+
+    if (newIndex == currentIndex) return; // Pas de changement
+
+    // Créer la pièce avec la nouvelle orientation
+    final transformedPiece = placedPiece.copyWith(positionIndex: newIndex);
+
+    // Recalculer les solutions possibles
+    final solutionsCount = _computeSolutionsWithTransformedPiece(transformedPiece);
+    print('[GAME] 🎯 Solutions possibles après symétrie ${isHorizontal ? 'horizontale' : 'verticale'} (mastercase) : $solutionsCount');
+
+    // Mettre à jour l'état
+    state = state.copyWith(
+      selectedPlacedPiece: transformedPiece,
+      selectedPositionIndex: newIndex,
+      solutionsCount: solutionsCount,
+    );
+    _recomputeBoardValidity();
+  }
+
+  /// Applique une symétrie classique à une pièce placée (sans mastercase)
+  void _applySymmetryToPlacedPiece({required bool isHorizontal}) {
+    final placedPiece = state.selectedPlacedPiece;
+    if (placedPiece == null) return;
+
+    final piece = placedPiece.piece;
+    final currentIndex = placedPiece.positionIndex;
+
+    // Appliquer la symétrie classique
+    final newIndex = isHorizontal ? piece.symmetryH(currentIndex) : piece.symmetryV(currentIndex);
+
+    if (newIndex == currentIndex) return; // Pas de changement
+
+    // Créer la pièce avec la nouvelle orientation
+    final transformedPiece = placedPiece.copyWith(positionIndex: newIndex);
+
+    // Recalculer les solutions possibles
+    final solutionsCount = _computeSolutionsWithTransformedPiece(transformedPiece);
+    print('[GAME] 🎯 Solutions possibles après symétrie ${isHorizontal ? 'horizontale' : 'verticale'} : $solutionsCount');
+
+    // Mettre à jour l'état
+    state = state.copyWith(
+      selectedPlacedPiece: transformedPiece,
+      selectedPositionIndex: newIndex,
+      solutionsCount: solutionsCount,
+    );
+    _recomputeBoardValidity();
+  }
+
+  /// Applique une rotation spécifique à une pièce placée en maintenant la mastercase fixe
+  void _applyRotationToPlacedPiece({required bool isClockwise}) {
+    final placedPiece = state.selectedPlacedPiece;
+    if (placedPiece == null) return;
+
+    final piece = placedPiece.piece;
+    final currentIndex = placedPiece.positionIndex;
+
+    // Appliquer la rotation spécifique
+    final newIndex = isClockwise ? piece.rotationCW(currentIndex) : piece.rotationTW(currentIndex);
+
+    if (newIndex == currentIndex) return; // Pas de changement
+
+    // Créer la pièce avec la nouvelle orientation
+    final transformedPiece = placedPiece.copyWith(positionIndex: newIndex);
+
+    // Recalculer les solutions possibles
+    final solutionsCount = _computeSolutionsWithTransformedPiece(transformedPiece);
+    print('[GAME] 🎯 Solutions possibles après rotation ${isClockwise ? 'horaire' : 'anti-horaire'} : $solutionsCount');
+
+    // Mettre à jour l'état
+    state = state.copyWith(
+      selectedPlacedPiece: transformedPiece,
+      selectedPositionIndex: newIndex,
+      solutionsCount: solutionsCount,
+    );
+    _recomputeBoardValidity();
+  }
 
   /// Met à jour l'état de la preview (évite les rebuilds inutiles)
   void _updatePreviewState(int x, int y, {required bool isValid, required bool isSnapped}) {

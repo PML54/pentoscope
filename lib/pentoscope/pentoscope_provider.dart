@@ -30,6 +30,12 @@ final pentoscopeProvider =
 
 enum PentoscopeDifficulty { easy, random, hard }
 
+enum TransformationResult {
+  success,      // Transformation réussie sans ajustement
+  recentered,   // Transformation réussie avec recentrage
+  impossible,   // Transformation impossible
+}
+
 class PentoscopeNotifier extends Notifier<PentoscopeState> {
   late final PentoscopeGenerator _generator;
   late final PentoscopeSolver _solver;
@@ -38,27 +44,27 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
   Timer? _gameTimer;
   DateTime? _startTime;
 
-  void applyIsometryRotationCW() {
-    _applyIsoUsingLookup((p, idx) => p.rotationCW(idx));
+  TransformationResult applyIsometryRotationCW() {
+    return _applyIsoUsingLookup((p, idx) => p.rotationCW(idx));
   }
 
-  void applyIsometryRotationTW() {
-    _applyIsoUsingLookup((p, idx) => p.rotationTW(idx));
+  TransformationResult applyIsometryRotationTW() {
+    return _applyIsoUsingLookup((p, idx) => p.rotationTW(idx));
   }
 
-  void applyIsometrySymmetryH() {
+  TransformationResult applyIsometrySymmetryH() {
     if (state.viewOrientation == ViewOrientation.landscape) {
-      _applyIsoUsingLookup((p, idx) => p.symmetryV(idx));
+      return _applyIsoUsingLookup((p, idx) => p.symmetryV(idx));
     } else {
-      _applyIsoUsingLookup((p, idx) => p.symmetryH(idx));
+      return _applyIsoUsingLookup((p, idx) => p.symmetryH(idx));
     }
   }
 
-  void applyIsometrySymmetryV() {
+  TransformationResult applyIsometrySymmetryV() {
     if (state.viewOrientation == ViewOrientation.landscape) {
-      _applyIsoUsingLookup((p, idx) => p.symmetryH(idx));
+      return _applyIsoUsingLookup((p, idx) => p.symmetryH(idx));
     } else {
-      _applyIsoUsingLookup((p, idx) => p.symmetryV(idx));
+      return _applyIsoUsingLookup((p, idx) => p.symmetryV(idx));
     }
   }
 
@@ -467,9 +473,33 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
   ) {
     if (state.isComplete) return; // ← Bloquer si puzzle complet
 
-    // Calculer la cellule locale cliquée (mastercase)
-    final localX = absoluteX - placed.gridX;
-    final localY = absoluteY - placed.gridY;
+    // Calculer la cellule locale cliquée (mastercase) en coordonnées brutes
+    final rawLocalX = absoluteX - placed.gridX;
+    final rawLocalY = absoluteY - placed.gridY;
+
+    // Convertir en coordonnées normalisées (comme dans _remapSelectedCell)
+    final position = placed.piece.positions[placed.positionIndex];
+    final coords = position.map((cellNum) {
+      final x = (cellNum - 1) % 5;
+      final y = (cellNum - 1) ~/ 5;
+      return Point(x, y);
+    }).toList();
+
+    final minX = coords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+    final minY = coords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+    final normalizedCoords = coords.map((p) => Point(p.x - minX, p.y - minY)).toList();
+
+    // Trouver quelle cellule normalisée correspond à la position cliquée
+    Point? normalizedMastercase;
+    for (int i = 0; i < coords.length; i++) {
+      if (coords[i].x == rawLocalX && coords[i].y == rawLocalY) {
+        normalizedMastercase = normalizedCoords[i];
+        break;
+      }
+    }
+
+    // Si on n'a pas trouvé, utiliser les coordonnées brutes (fallback)
+    final mastercase = normalizedMastercase ?? Point(rawLocalX, rawLocalY);
 
     // Retirer la pièce du plateau temporairement
     final newPlateau = Plateau.allVisible(
@@ -490,7 +520,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
       selectedPiece: placed.piece,
       selectedPlacedPiece: placed,
       selectedPositionIndex: placed.positionIndex,
-      selectedCellInPiece: Point(localX, localY),
+      selectedCellInPiece: mastercase,
       clearPreview: true,
     );
 
@@ -837,15 +867,15 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
   // VALIDATION ISOMÉTRIES - NOUVELLE MÉTHODE
   // ============================================================================
 
-  void _applyIsoUsingLookup(int Function(Pento p, int idx) f) {
+  TransformationResult _applyIsoUsingLookup(int Function(Pento p, int idx) f) {
     final piece = state.selectedPiece;
-    if (piece == null) return;
+    if (piece == null) return TransformationResult.success;
 
     final oldIdx = state.selectedPositionIndex;
     final newIdx = f(piece, oldIdx);
     final didChange = oldIdx != newIdx;
 
-    if (!didChange) return;
+    if (!didChange) return TransformationResult.success;
 
     // ========================================================================
     // CAS 1: Pièce du SLIDER sélectionnée (pas de validation nécessaire)
@@ -867,7 +897,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
       // ✨ BUGFIX: Régénérer validPlacements avec le NOUVEAU positionIndex
       final newValidPlacements = _generateValidPlacements(piece, newIdx);
       state = state.copyWith(validPlacements: newValidPlacements);
-      return;
+      return TransformationResult.success;
     }
 
     // ========================================================================
@@ -876,22 +906,134 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
 
     final transformedPiece = sp.copyWith(positionIndex: newIdx);
 
-    // ✨ Ajuster gridX ET gridY si nécessaire
-    int adjustedGridX = sp.gridX;
-    int adjustedGridY = sp.gridY;
+    // 🎯 LOGIQUE MASTERCACE FIXE
+    late int adjustedGridX;
+    late int adjustedGridY;
+    bool neededRecentering = false;
 
-    // Ajuster X
-    while (adjustedGridX > 0 &&
-        (adjustedGridX + _getMaxLocalX(transformedPiece) >=
-            state.plateau.width)) {
-      adjustedGridX--;
+    if (state.selectedCellInPiece != null) {
+      // Calculer la position pour maintenir la mastercase fixe
+      final fixedPosition = _calculatePositionForFixedMastercase(
+        originalPiece: sp,
+        transformedPiece: transformedPiece,
+        mastercase: state.selectedCellInPiece!,
+      );
+
+      adjustedGridX = fixedPosition.x;
+      adjustedGridY = fixedPosition.y;
+
+      debugPrint(
+        '🎯 Mastercase fixe: (${sp.gridX},${sp.gridY}) → ($adjustedGridX,$adjustedGridY)',
+      );
+    } else {
+      // Logique classique si pas de mastercase définie
+      adjustedGridX = sp.gridX;
+      adjustedGridY = sp.gridY;
     }
 
-    // Ajuster Y
-    while (adjustedGridY > 0 &&
-        (adjustedGridY + _getMaxLocalY(transformedPiece) >=
-            state.plateau.height)) {
-      adjustedGridY--;
+    // Créer une pièce temporaire pour tester la position initiale
+    final initialPiece = transformedPiece.copyWith(
+      gridX: adjustedGridX,
+      gridY: adjustedGridY,
+    );
+
+    // Vérifier si la position initiale est valide
+    if (!_canPlacePieceWithoutChecker(initialPiece)) {
+      // Chercher une position valide proche
+      if (state.selectedCellInPiece != null) {
+        final mastercaseAbs = Point(
+          sp.gridX + state.selectedCellInPiece!.x,
+          sp.gridY + state.selectedCellInPiece!.y,
+        );
+        final nearestPosition = _findNearestValidPosition(
+          piece: transformedPiece,
+          mastercaseAbs: mastercaseAbs,
+          mastercaseLocal: state.selectedCellInPiece!,
+        );
+
+        if (nearestPosition == null) {
+          debugPrint('❌ Transformation impossible - aucune position valide trouvée');
+          return TransformationResult.impossible;
+        }
+
+        adjustedGridX = nearestPosition.x;
+        adjustedGridY = nearestPosition.y;
+        neededRecentering = true;
+      } else {
+        debugPrint('❌ Transformation impossible - chevauchement et pas de mastercase');
+        return TransformationResult.impossible;
+      }
+    }
+
+    // 🔄 AJUSTEMENT AUTOMATIQUE si la pièce sort du plateau
+    // Ajuster X si nécessaire
+    while (adjustedGridX < 0 ||
+        (adjustedGridX + _getMaxLocalX(transformedPiece) >= state.plateau.width)) {
+      if (adjustedGridX > 0) {
+        adjustedGridX--;
+        neededRecentering = true;
+      } else {
+        // Ne peut pas aller plus à gauche, chercher une position valide
+        if (state.selectedCellInPiece != null) {
+          final mastercaseAbs = Point(
+            sp.gridX + state.selectedCellInPiece!.x,
+            sp.gridY + state.selectedCellInPiece!.y,
+          );
+          final nearestPosition = _findNearestValidPosition(
+            piece: transformedPiece,
+            mastercaseAbs: mastercaseAbs,
+            mastercaseLocal: state.selectedCellInPiece!,
+          );
+
+          if (nearestPosition == null) {
+            debugPrint('❌ Transformation impossible - pièce sortirait du plateau');
+            return TransformationResult.impossible;
+          }
+
+          adjustedGridX = nearestPosition.x;
+          adjustedGridY = nearestPosition.y;
+          neededRecentering = true;
+          break;
+        } else {
+          debugPrint('❌ Transformation impossible - pièce sortirait du plateau');
+          return TransformationResult.impossible;
+        }
+      }
+    }
+
+    // Ajuster Y si nécessaire
+    while (adjustedGridY < 0 ||
+        (adjustedGridY + _getMaxLocalY(transformedPiece) >= state.plateau.height)) {
+      if (adjustedGridY > 0) {
+        adjustedGridY--;
+        neededRecentering = true;
+      } else {
+        // Ne peut pas aller plus haut, chercher une position valide
+        if (state.selectedCellInPiece != null) {
+          final mastercaseAbs = Point(
+            sp.gridX + state.selectedCellInPiece!.x,
+            sp.gridY + state.selectedCellInPiece!.y,
+          );
+          final nearestPosition = _findNearestValidPosition(
+            piece: transformedPiece,
+            mastercaseAbs: mastercaseAbs,
+            mastercaseLocal: state.selectedCellInPiece!,
+          );
+
+          if (nearestPosition == null) {
+            debugPrint('❌ Transformation impossible - pièce sortirait du plateau');
+            return TransformationResult.impossible;
+          }
+
+          adjustedGridX = nearestPosition.x;
+          adjustedGridY = nearestPosition.y;
+          neededRecentering = true;
+          break;
+        } else {
+          debugPrint('❌ Transformation impossible - pièce sortirait du plateau');
+          return TransformationResult.impossible;
+        }
+      }
     }
 
     final finalPiece = transformedPiece.copyWith(
@@ -899,16 +1041,13 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
       gridY: adjustedGridY,
     );
 
-    debugPrint(
-      '✏️  Ajusté: (${sp.gridX},${sp.gridY}) → ($adjustedGridX,$adjustedGridY)',
-    );
-
+    // Vérifier une dernière fois que la position est valide
     if (!_canPlacePieceWithoutChecker(finalPiece)) {
-      HapticFeedback.heavyImpact();
-      return;
+      debugPrint('❌ Transformation impossible - position finale invalide');
+      return TransformationResult.impossible;
     }
 
-// ✨ SAUVEGARDER la pièce avec la nouvelle position
+    // ✨ SAUVEGARDER la pièce avec la nouvelle position
     final updatedPlacedPieces = state.placedPieces.map((p) {
       if (p.piece.id == sp.piece.id) {
         return finalPiece;  // ← Utiliser finalPiece ajustée!
@@ -932,12 +1071,50 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
         ? _checkHasPossibleSolutionWith(newPlateau, state.availablePieces, updatedPlacedPieces)
         : false;
 
+    // Calculer la nouvelle position relative de la mastercase dans la pièce transformée
+    Point? newSelectedCellInPiece;
+    if (state.selectedCellInPiece != null) {
+      // Utiliser la même logique que _calculatePositionForFixedMastercase pour trouver la nouvelle position relative
+      final originalPosition = sp.piece.positions[oldIdx];
+      final transformedPosition = piece.positions[newIdx];
+      
+      final originalCoords = originalPosition.map((cellNum) {
+        final x = (cellNum - 1) % 5;
+        final y = (cellNum - 1) ~/ 5;
+        return Point(x, y);
+      }).toList();
+
+      final minXOrig = originalCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+      final minYOrig = originalCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+      final normalizedOrigCoords = originalCoords.map((p) => Point(p.x - minXOrig, p.y - minYOrig)).toList();
+
+      final mastercaseIndex = normalizedOrigCoords.indexWhere((p) => p.x == state.selectedCellInPiece!.x && p.y == state.selectedCellInPiece!.y);
+      if (mastercaseIndex != -1) {
+        final mastercaseCellNum = originalPosition[mastercaseIndex];
+        final cellIndexInTransformed = transformedPosition.indexOf(mastercaseCellNum);
+        
+        if (cellIndexInTransformed != -1) {
+          final transformedCoords = transformedPosition.map((cellNum) {
+            final x = (cellNum - 1) % 5;
+            final y = (cellNum - 1) ~/ 5;
+            return Point(x, y);
+          }).toList();
+
+          final minXTrans = transformedCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+          final minYTrans = transformedCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+          final normalizedTransCoords = transformedCoords.map((p) => Point(p.x - minXTrans, p.y - minYTrans)).toList();
+
+          newSelectedCellInPiece = normalizedTransCoords[cellIndexInTransformed];
+        }
+      }
+    }
+
     state = state.copyWith(
       plateau: newPlateau,
       selectedPlacedPiece: finalPiece,  // ← Mettre à jour!
       placedPieces: updatedPlacedPieces,
       selectedPositionIndex: newIdx,
-      selectedCellInPiece: _remapSelectedCell(
+      selectedCellInPiece: newSelectedCellInPiece ?? _remapSelectedCell(
         piece: piece,
         oldIndex: oldIdx,
         newIndex: newIdx,
@@ -947,6 +1124,76 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
       isometryCount: state.isometryCount + 1,
       hasPossibleSolution: hasPossibleSolution, // 💡 Mise à jour!
     );
+
+    return neededRecentering ? TransformationResult.recentered : TransformationResult.success;
+  }
+
+  /// Calcule la position gridX,gridY pour maintenir la mastercase fixe lors d'une transformation
+  Point _calculatePositionForFixedMastercase({
+    required PentoscopePlacedPiece originalPiece,
+    required PentoscopePlacedPiece transformedPiece,
+    required Point mastercase,
+  }) {
+    // 1. Trouver le numéro de cellule correspondant à la mastercase dans la position originale
+    // On utilise la même logique que _remapSelectedCell pour obtenir les coordonnées normalisées
+    final originalPosition = originalPiece.piece.positions[originalPiece.positionIndex];
+    final originalCoords = originalPosition.map((cellNum) {
+      final x = (cellNum - 1) % 5;
+      final y = (cellNum - 1) ~/ 5;
+      return Point(x, y);
+    }).toList();
+
+    final minXOrig = originalCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+    final minYOrig = originalCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+    final normalizedOrigCoords = originalCoords.map((p) => Point(p.x - minXOrig, p.y - minYOrig)).toList();
+
+    // Trouver l'index de la mastercase dans les coordonnées normalisées
+    final mastercaseIndex = normalizedOrigCoords.indexWhere((p) => p.x == mastercase.x && p.y == mastercase.y);
+    if (mastercaseIndex == -1) {
+      debugPrint('Warning: Mastercase not found in original position, keeping original position');
+      return Point(originalPiece.gridX, originalPiece.gridY);
+    }
+
+    // 2. Obtenir le numéro de cellule correspondant
+    final mastercaseCellNum = originalPosition[mastercaseIndex];
+
+    // 3. Trouver où cette cellule se trouve dans la nouvelle orientation
+    final transformedPosition = transformedPiece.piece.positions[transformedPiece.positionIndex];
+    final cellIndexInTransformed = transformedPosition.indexOf(mastercaseCellNum);
+
+    if (cellIndexInTransformed == -1) {
+      // La cellule mastercase n'existe plus dans la nouvelle orientation
+      debugPrint('Warning: Mastercase cell $mastercaseCellNum disappeared after transformation, keeping original position');
+      return Point(originalPiece.gridX, originalPiece.gridY);
+    }
+
+    // 4. Calculer les coordonnées normalisées dans la nouvelle orientation
+    final transformedCoords = transformedPosition.map((cellNum) {
+      final x = (cellNum - 1) % 5;
+      final y = (cellNum - 1) ~/ 5;
+      return Point(x, y);
+    }).toList();
+
+    final minXTrans = transformedCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+    final minYTrans = transformedCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+    final normalizedTransCoords = transformedCoords.map((p) => Point(p.x - minXTrans, p.y - minYTrans)).toList();
+
+    // 5. La nouvelle position relative normalisée de la mastercase
+    final newMastercaseLocal = normalizedTransCoords[cellIndexInTransformed];
+
+    // 6. Position absolue actuelle de la mastercase
+    final mastercaseAbsX = originalPiece.gridX + mastercase.x;
+    final mastercaseAbsY = originalPiece.gridY + mastercase.y;
+
+    // 7. Calculer gridX, gridY pour que la mastercase reste à la position absolue
+    // La cellule physique dans la grille 5x5 brute est à (minXTrans + newMastercaseLocal.x, minYTrans + newMastercaseLocal.y)
+    final newLocalX = minXTrans + newMastercaseLocal.x;
+    final newLocalY = minYTrans + newMastercaseLocal.y;
+
+    final newGridX = mastercaseAbsX - newLocalX;
+    final newGridY = mastercaseAbsY - newLocalY;
+
+    return Point(newGridX, newGridY);
   }
 
   /// Helper: calcule la mastercase par défaut (première cellule normalisée)
@@ -1010,6 +1257,102 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
 
     debugPrint('   ✅ VALIDE');
     return true;
+  }
+
+  /// Cherche la position valide la plus proche autour de la mastercase
+  /// Retourne null si aucune position valide n'est trouvée dans un rayon raisonnable
+  Point? _findNearestValidPosition({
+    required PentoscopePlacedPiece piece,
+    required Point mastercaseAbs,
+    required Point mastercaseLocal,
+    int maxRadius = 5,
+  }) {
+    // Retirer temporairement la pièce du plateau pour la vérification
+    final tempPlateau = Plateau.allVisible(
+      state.plateau.width,
+      state.plateau.height,
+    );
+    for (final p in state.placedPieces) {
+      if (p.piece.id == piece.piece.id) continue; // Exclure la pièce transformée
+      for (final cell in p.absoluteCells) {
+        tempPlateau.setCell(cell.x, cell.y, p.piece.id);
+      }
+    }
+
+    // Trouver la cellule de la mastercase dans la pièce transformée (même logique que _calculatePositionForFixedMastercase)
+    final mastercaseCellNum = mastercaseLocal.y * 5 + mastercaseLocal.x + 1;
+    final transformedPosition = piece.piece.positions[piece.positionIndex];
+    
+    if (!transformedPosition.contains(mastercaseCellNum)) {
+      // La mastercase n'existe pas dans cette orientation
+      return null;
+    }
+
+    // Calculer la position relative de la mastercase dans la pièce transformée
+    final newMastercaseLocalX = (mastercaseCellNum - 1) % 5;
+    final newMastercaseLocalY = (mastercaseCellNum - 1) ~/ 5;
+
+    // Position initiale pour garder la mastercase fixe
+    final initialGridX = mastercaseAbs.x - newMastercaseLocalX;
+    final initialGridY = mastercaseAbs.y - newMastercaseLocalY;
+
+    // Recherche en spirale autour de la position initiale
+    for (int radius = 0; radius <= maxRadius; radius++) {
+      // Générer toutes les positions à cette distance
+      final candidates = <Point>[];
+      
+      if (radius == 0) {
+        candidates.add(Point(initialGridX, initialGridY));
+      } else {
+        // Parcourir le périmètre du carré de rayon radius
+        for (int dx = -radius; dx <= radius; dx++) {
+          for (int dy = -radius; dy <= radius; dy++) {
+            // Ne garder que les cases sur le périmètre (distance exacte = radius)
+            if ((dx.abs() == radius || dy.abs() == radius)) {
+              final testGridX = initialGridX + dx;
+              final testGridY = initialGridY + dy;
+              candidates.add(Point(testGridX, testGridY));
+            }
+          }
+        }
+      }
+
+      // Tester chaque candidat
+      for (final candidate in candidates) {
+        final testPiece = piece.copyWith(
+          gridX: candidate.x,
+          gridY: candidate.y,
+        );
+
+        // Vérifier si cette position est valide
+        bool isValid = true;
+        for (final cell in testPiece.absoluteCells) {
+          // Vérifier les limites
+          if (cell.x < 0 ||
+              cell.x >= state.plateau.width ||
+              cell.y < 0 ||
+              cell.y >= state.plateau.height) {
+            isValid = false;
+            break;
+          }
+
+          // Vérifier chevauchement
+          final cellValue = tempPlateau.getCell(cell.x, cell.y);
+          if (cellValue != 0 && cellValue != piece.piece.id) {
+            isValid = false;
+            break;
+          }
+        }
+
+        if (isValid) {
+          debugPrint('✅ Position valide trouvée à distance $radius: (${candidate.x}, ${candidate.y})');
+          return candidate;
+        }
+      }
+    }
+
+    debugPrint('❌ Aucune position valide trouvée dans un rayon de $maxRadius');
+    return null;
   }
 
   /// Trouve la position valide la plus proche du doigt

@@ -17,7 +17,8 @@
 6. [Providers (Riverpod)](#providers-riverpod)
 7. [Système de solutions](#système-de-solutions)
 8. [Déplacement des pièces](#déplacement-des-pièces)
-9. [Configuration](#configuration)
+9. [Transformations avec mastercase fixe (Pentoscope)](#-transformations-avec-mastercase-fixe-pentoscope)
+10. [Configuration](#configuration)
 
 ---
 
@@ -871,6 +872,194 @@ Pour les détails complets du mécanisme (diagrammes de séquence, code détaill
 
 ---
 
+## 🔄 Transformations avec mastercase fixe (Pentoscope)
+
+### Vue d'ensemble
+
+Le mode Pentoscope implémente un système de transformations (rotations et symétries) où la **mastercase** (cellule sélectionnée par l'utilisateur) reste **fixe** à sa position absolue sur le plateau, même après transformation.
+
+### Principe fondamental
+
+**Mastercase** : Cellule d'une pièce placée sur le plateau désignée par l'utilisateur comme point de référence pour les transformations.
+
+**Comportement attendu** :
+- **Rotation** : La mastercase est le centre de rotation → elle reste fixe
+- **Symétrie** : L'axe de symétrie passe par la mastercase → elle reste fixe
+
+### Architecture
+
+**Fichiers clés** :
+- `lib/pentoscope/pentoscope_provider.dart` : Logique de transformation
+- `lib/pentoscope/screens/pentoscope_game_screen.dart` : UI avec messages
+
+**Enum `TransformationResult`** :
+```dart
+enum TransformationResult {
+  success,      // Transformation réussie sans ajustement
+  recentered,   // Transformation réussie avec recentrage
+  impossible,   // Transformation impossible
+}
+```
+
+### Système de coordonnées
+
+Le système utilise **3 systèmes de coordonnées** :
+
+1. **Coordonnées brutes** : Position dans la grille 5×5 (0-4, 0-4)
+2. **Coordonnées normalisées** : Position relative dans la pièce (décalée pour commencer à 0,0)
+3. **Coordonnées absolues** : Position sur le plateau 6×10 (gridX, gridY)
+
+**Conversion** :
+```dart
+// Dans selectPlacedPiece : convertir coordonnées brutes → normalisées
+final rawLocalX = absoluteX - placed.gridX;
+final rawLocalY = absoluteY - placed.gridY;
+
+// Trouver la cellule correspondante dans les coordonnées normalisées
+final normalizedCoords = coords.map((p) => Point(p.x - minX, p.y - minY)).toList();
+final mastercase = normalizedCoords[index];
+```
+
+### Calcul de position avec mastercase fixe
+
+**Méthode `_calculatePositionForFixedMastercase`** :
+
+```dart
+Point _calculatePositionForFixedMastercase({
+  required PentoscopePlacedPiece originalPiece,
+  required PentoscopePlacedPiece transformedPiece,
+  required Point mastercase, // Coordonnées normalisées
+}) {
+  // 1. Trouver le numéro de cellule correspondant à la mastercase
+  final mastercaseIndex = normalizedOrigCoords.indexWhere(
+    (p) => p.x == mastercase.x && p.y == mastercase.y
+  );
+  final mastercaseCellNum = originalPosition[mastercaseIndex];
+
+  // 2. Trouver cette cellule dans la position transformée
+  final cellIndexInTransformed = transformedPosition.indexOf(mastercaseCellNum);
+
+  // 3. Calculer les coordonnées normalisées dans la nouvelle orientation
+  final normalizedTransCoords = ...;
+  final newMastercaseLocal = normalizedTransCoords[cellIndexInTransformed];
+
+  // 4. Calculer gridX, gridY pour maintenir la position absolue
+  final mastercaseAbsX = originalPiece.gridX + mastercase.x;
+  final mastercaseAbsY = originalPiece.gridY + mastercase.y;
+  
+  final newLocalX = minXTrans + newMastercaseLocal.x;
+  final newLocalY = minYTrans + newMastercaseLocal.y;
+  
+  final newGridX = mastercaseAbsX - newLocalX;
+  final newGridY = mastercaseAbsY - newLocalY;
+
+  return Point(newGridX, newGridY);
+}
+```
+
+### Recherche de position valide
+
+**Méthode `_findNearestValidPosition`** :
+
+Si la transformation cause un chevauchement ou une sortie du plateau, le système recherche automatiquement la position valide la plus proche autour de la mastercase.
+
+**Algorithme** :
+1. Recherche en spirale autour de la position initiale (rayon max = 5 cases)
+2. Teste chaque position candidate pour validité
+3. Retourne la première position valide trouvée
+4. Retourne `null` si aucune position valide n'est trouvée
+
+```dart
+Point? _findNearestValidPosition({
+  required PentoscopePlacedPiece piece,
+  required Point mastercaseAbs,
+  required Point mastercaseLocal,
+  int maxRadius = 5,
+}) {
+  // Recherche en spirale
+  for (int radius = 0; radius <= maxRadius; radius++) {
+    // Générer candidats à cette distance
+    final candidates = ...;
+    
+    for (final candidate in candidates) {
+      if (_canPlacePieceWithoutChecker(testPiece)) {
+        return candidate;
+      }
+    }
+  }
+  return null; // Impossible
+}
+```
+
+### Messages utilisateur
+
+**Affichage des résultats** :
+
+```dart
+void _handleTransformationResult(BuildContext context, TransformationResult result) {
+  switch (result) {
+    case TransformationResult.success:
+      // Pas de message
+      break;
+    case TransformationResult.recentered:
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Recentrage'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      break;
+    case TransformationResult.impossible:
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Transformation impossible'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+      break;
+  }
+}
+```
+
+### Flux de transformation
+
+```
+1. User sélectionne pièce placée → selectPlacedPiece()
+   └─> Calcule mastercase en coordonnées normalisées
+   
+2. User clique bouton transformation → applyIsometryRotationCW/TW/SymmetryH/V()
+   └─> _applyIsoUsingLookup()
+       ├─> Change positionIndex (orientation)
+       ├─> _calculatePositionForFixedMastercase()
+       │   └─> Calcule gridX, gridY pour mastercase fixe
+       ├─> Vérifie validité avec _canPlacePieceWithoutChecker()
+       │   ├─> Si valide → TransformationResult.success
+       │   └─> Si invalide → _findNearestValidPosition()
+       │       ├─> Si trouvé → TransformationResult.recentered
+       │       └─> Si null → TransformationResult.impossible
+       └─> Met à jour selectedCellInPiece avec nouvelle position relative
+```
+
+### Points importants
+
+1. **Coordonnées normalisées** : La mastercase doit toujours être stockée en coordonnées normalisées, pas en coordonnées brutes
+2. **Mise à jour après transformation** : `selectedCellInPiece` doit être recalculé après chaque transformation pour suivre la mastercase
+3. **Fallback** : Si la mastercase disparaît dans la nouvelle orientation, garder la position originale
+4. **Recentrage automatique** : Si la transformation cause un conflit, chercher la position valide la plus proche
+
+### Cas limites gérés
+
+- ✅ Mastercase disparaît dans nouvelle orientation → Fallback position originale
+- ✅ Pièce chevauche après transformation → Recentrage automatique
+- ✅ Pièce sort du plateau → Recentrage automatique
+- ✅ Aucune position valide trouvée → Message "Transformation impossible"
+
+---
+
 ## ⚙️ Configuration
 
 ### `pubspec.yaml`
@@ -1082,9 +1271,10 @@ final color = GameColors.masterCellBorderColor;
 
 ---
 
-**Dernière mise à jour : 1er décembre 2025**
+**Dernière mise à jour : 1er janvier 2026**
 
 **Mainteneur : Documentation générée automatiquement**
 
 **Changements récents** :
+- 1er janvier 2026 : Système de mastercase fixe pour transformations (Pentoscope), messages fugaces, recentrage automatique
 - 1er décembre 2025 : Suppression système Race, nouveau HomeScreen moderne

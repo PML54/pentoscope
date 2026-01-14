@@ -1,3 +1,6 @@
+import '../common/point.dart';
+import 'package:flutter/foundation.dart';
+
 // lib/models/pentominos.dart
 // Modified: 2512092000
 // Pentominos avec numéros de cases sur grille 5×5
@@ -757,6 +760,14 @@ class Pento {
   int symmetryV(int currentPositionIndex) =>
       _applyIso(currentPositionIndex, _flipHCoords);
 
+  // Symétrie par rapport à une droite horizontale passant par la mastercase
+  int symmetryHRelativeToMastercase(int currentPositionIndex, Point mastercase) =>
+      _applySymmetryRelativeToPoint(currentPositionIndex, mastercase, isHorizontal: true);
+
+  // Symétrie par rapport à une droite verticale passant par la mastercase
+  int symmetryVRelativeToMastercase(int currentPositionIndex, Point mastercase) =>
+      _applySymmetryRelativeToPoint(currentPositionIndex, mastercase, isHorizontal: false);
+
   /// Retourne le nombre MIN d'isométries pour aller de startPos à endPos
   int minIsometriesToReach(int startPos, int endPos) {
     if (startPos == endPos) return 0;
@@ -819,6 +830,51 @@ class Pento {
     // V: (x,y) -> (x, -y)
     final flipped = coords.map((c) => [c[0], -c[1]]).toList();
     return _normalizeAndSort(flipped);
+  }
+
+  // Retourne les coordonnées cartésiennes pour une position donnée
+  List<List<int>> _getCoordsForPosition(int positionIndex) {
+    return cartesianCoords[positionIndex];
+  }
+
+  // Applique une symétrie par rapport à une droite passant par un point donné
+  int _applySymmetryRelativeToPoint(int currentPositionIndex, Point mastercase, {required bool isHorizontal}) {
+    final currentCoords = _getCoordsForPosition(currentPositionIndex);
+
+    List<List<int>> transformedCoords;
+    if (isHorizontal) {
+      // Symétrie horizontale : (x,y) -> (x, 2*mastercaseY - y)
+      transformedCoords = currentCoords.map((coord) {
+        final x = coord[0];
+        final y = coord[1];
+        return [x, 2 * mastercase.y - y];
+      }).toList();
+    } else {
+      // Symétrie verticale : (x,y) -> (2*mastercaseX - x, y)
+      transformedCoords = currentCoords.map((coord) {
+        final x = coord[0];
+        final y = coord[1];
+        return [2 * mastercase.x - x, y];
+      }).toList();
+    }
+
+    return _findOrCreatePosition(_normalizeAndSort(transformedCoords));
+  }
+
+  // Trouve une position existante ou en crée une nouvelle
+  int _findOrCreatePosition(List<List<int>> coords) {
+    // Chercher d'abord dans les positions existantes
+    for (int i = 0; i < cartesianCoords.length; i++) {
+      if (_coordsEqual(coords, cartesianCoords[i])) {
+        return i;
+      }
+    }
+
+    // Si pas trouvé et qu'on a de la place, on pourrait ajouter (mais pour l'instant on garde simple)
+    // Pour les symétries relatives, il se peut qu'on obtienne une position qui n'existe pas
+    // dans la liste pré-calculée. Dans ce cas, on essaie de trouver la plus proche ou on garde l'index actuel.
+    debugPrint('Warning: Symmetry resulted in unknown position, keeping current position');
+    return 0; // Retourner la position de base
   }
 
   List<List<int>> _normalizeAndSort(List<List<int>> coords) {

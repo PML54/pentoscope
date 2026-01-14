@@ -16,6 +16,7 @@ import 'package:pentapol/pentoscope/widgets/pentoscope_board.dart';
 import 'package:pentapol/pentoscope/widgets/pentoscope_piece_slider.dart';
 import 'package:pentapol/pentoscope_multiplayer/screens/pentoscope_mp_lobby_screen.dart';
 import 'package:pentapol/screens/demo_screen.dart';
+import 'package:pentapol/classical/pentomino_game_screen.dart';
 import 'package:pentapol/config/ui_sizes_config.dart';
 
 /// ⏱️ Formate le temps en secondes (max 999s) - format compact
@@ -37,6 +38,35 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
   
   // 📍 Position du mini-plateau (draggable)
   Offset? _overlayPosition; // null = position par défaut (coin bas-droit)
+
+  /// Gère l'affichage des messages et vibrations selon le résultat de transformation
+  void _handleTransformationResult(BuildContext context, TransformationResult result) {
+    switch (result) {
+      case TransformationResult.success:
+        // Pas de message pour une transformation réussie sans ajustement
+        break;
+      case TransformationResult.recentered:
+        HapticFeedback.mediumImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Recentrage'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        break;
+      case TransformationResult.impossible:
+        HapticFeedback.heavyImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Transformation impossible'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -189,6 +219,21 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
                 );
               },
               tooltip: 'Démo automatique',
+            ),
+            // 🧩 Mode Classique
+            IconButton(
+              icon: const Icon(Icons.extension),
+              color: Colors.blue,
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PentominoGameScreen(),
+                  ),
+                );
+              },
+              tooltip: 'Mode Classique',
             ),
           ],
         ),
@@ -468,28 +513,40 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
       _buildIconButton(
         GameIcons.isometryRotationTW,
         settings,
-            () => notifier.applyIsometryRotationTW(),
+            () {
+          final result = notifier.applyIsometryRotationTW();
+          _handleTransformationResult(context, result);
+        },
       ),
 
       // Rotation horaire (CW)
       _buildIconButton(
         GameIcons.isometryRotationCW,
         settings,
-            () => notifier.applyIsometryRotationCW(),
+            () {
+          final result = notifier.applyIsometryRotationCW();
+          _handleTransformationResult(context, result);
+        },
       ),
 
       // Symétrie horizontale
       _buildIconButton(
         GameIcons.isometrySymmetryH,
         settings,
-            () => notifier.applyIsometrySymmetryH(),
+            () {
+          final result = notifier.applyIsometrySymmetryH();
+          _handleTransformationResult(context, result);
+        },
       ),
 
       // Symétrie verticale
       _buildIconButton(
         GameIcons.isometrySymmetryV,
         settings,
-            () => notifier.applyIsometrySymmetryV(),
+            () {
+          final result = notifier.applyIsometrySymmetryV();
+          _handleTransformationResult(context, result);
+        },
       ),
 
       // Supprimer (uniquement si pièce placée sélectionnée)
@@ -499,6 +556,31 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
           settings,
               () => notifier.removePlacedPiece(state.selectedPlacedPiece!),
         ),
+
+      // Mode Classique
+      Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        child: IconButton(
+          icon: const Icon(Icons.extension),
+          color: Colors.blue,
+          iconSize: 24,
+          padding: const EdgeInsets.all(8),
+          constraints: const BoxConstraints(
+            minWidth: 40,
+            minHeight: 40,
+          ),
+          onPressed: () {
+            HapticFeedback.selectionClick();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const PentominoGameScreen(),
+              ),
+            );
+          },
+          tooltip: 'Mode Classique',
+        ),
+      ),
     ];
 
     return direction == Axis.horizontal
@@ -526,7 +608,8 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
           constraints: const BoxConstraints(),
           onPressed: () {
             HapticFeedback.selectionClick();
-            notifier.applyIsometryRotationTW();
+            final result = notifier.applyIsometryRotationTW();
+            _handleTransformationResult(context, result);
           },
           tooltip: GameIcons.isometryRotationTW.tooltip,
           color: GameIcons.isometryRotationTW.color,
@@ -538,7 +621,8 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
           constraints: const BoxConstraints(),
           onPressed: () {
             HapticFeedback.selectionClick();
-            notifier.applyIsometryRotationCW();
+            final result = notifier.applyIsometryRotationCW();
+            _handleTransformationResult(context, result);
           },
           tooltip: GameIcons.isometryRotationCW.tooltip,
           color: GameIcons.isometryRotationCW.color,
@@ -550,7 +634,8 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
           constraints: const BoxConstraints(),
           onPressed: () {
             HapticFeedback.selectionClick();
-            notifier.applyIsometrySymmetryH();
+            final result = notifier.applyIsometrySymmetryH();
+            _handleTransformationResult(context, result);
           },
           tooltip: GameIcons.isometrySymmetryH.tooltip,
           color: GameIcons.isometrySymmetryH.color,
@@ -562,7 +647,8 @@ class _PentoscopeGameScreenState extends ConsumerState<PentoscopeGameScreen> {
           constraints: const BoxConstraints(),
           onPressed: () {
             HapticFeedback.selectionClick();
-            notifier.applyIsometrySymmetryV();
+            final result = notifier.applyIsometrySymmetryV();
+            _handleTransformationResult(context, result);
           },
           tooltip: GameIcons.isometrySymmetryV.tooltip,
           color: GameIcons.isometrySymmetryV.color,
