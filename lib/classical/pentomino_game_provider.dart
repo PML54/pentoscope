@@ -13,6 +13,7 @@ import 'package:pentapol/common/placed_piece.dart';
 import 'package:pentapol/common/plateau.dart';
 import 'package:pentapol/common/point.dart';
 import 'package:pentapol/common/shape_recognizer.dart';
+import 'package:pentapol/common/pentomino_game_mixin.dart';
 import 'package:pentapol/services/plateau_solution_counter.dart' show PlateauSolutionCounter;
 import 'package:pentapol/services/solution_matcher.dart' show SolutionInfo;
 import 'package:pentapol/providers/settings_provider.dart' show settingsDatabaseProvider;
@@ -25,8 +26,30 @@ NotifierProvider<PentominoGameNotifier, PentominoGameState>(
       () => PentominoGameNotifier(),
 );
 
-class PentominoGameNotifier extends Notifier<PentominoGameState> {
+class PentominoGameNotifier extends Notifier<PentominoGameState> 
+    with PentominoGameMixin {
   static const int _snapRadius = 2;
+  
+  // ============================================================================
+  // IMPLÉMENTATION DES MÉTHODES ABSTRAITES DU MIXIN
+  // ============================================================================
+  
+  @override
+  Plateau get currentPlateau => state.plateau;
+  
+  @override
+  Pento? get selectedPiece => state.selectedPiece;
+  
+  @override
+  int get selectedPositionIndex => state.selectedPositionIndex;
+  
+  @override
+  Point? get selectedCellInPiece => state.selectedCellInPiece;
+  
+  @override
+  bool canPlacePiece(Pento piece, int positionIndex, int gridX, int gridY) {
+    return state.canPlacePiece(piece, positionIndex, gridX, gridY);
+  }
 
   Timer? _gameTimer;  // ✨ NOUVEAU
   DateTime? _startTime;  // ✨ NOUVEAU
@@ -1542,31 +1565,16 @@ class PentominoGameNotifier extends Notifier<PentominoGameState> {
   }
 
   /// Cherche la position valide la plus proche dans un rayon donné
-  /// Utilise la distance euclidienne pour trouver vraiment la plus proche
+  /// 
+  /// ✅ Utilise maintenant la méthode du mixin
   Point? _findNearestValidPosition(Pento piece, int positionIndex, int anchorX, int anchorY) {
-    Point? best;
-    double bestDistanceSquared = double.infinity;
-
-    for (int dx = -_snapRadius; dx <= _snapRadius; dx++) {
-      for (int dy = -_snapRadius; dy <= _snapRadius; dy++) {
-        if (dx == 0 && dy == 0) continue; // Position exacte déjà testée
-
-        final testX = anchorX + dx;
-        final testY = anchorY + dy;
-
-        if (state.canPlacePiece(piece, positionIndex, testX, testY)) {
-          // Distance euclidienne au carré (évite sqrt pour la perf)
-          final distanceSquared = (dx * dx + dy * dy).toDouble();
-
-          if (distanceSquared < bestDistanceSquared) {
-            bestDistanceSquared = distanceSquared;
-            best = Point(testX, testY);
-          }
-        }
-      }
-    }
-
-    return best;
+    return findNearestValidPosition(
+      piece: piece,
+      positionIndex: positionIndex,
+      anchorX: anchorX,
+      anchorY: anchorY,
+      snapRadius: _snapRadius,
+    );
   }
 
   /// Recalcule la validité du plateau et les cellules problématiques
@@ -1608,27 +1616,20 @@ class PentominoGameNotifier extends Notifier<PentominoGameState> {
   }
 
   /// Remapping de la cellule de référence lors d'une isométrie
+  /// 
+  /// ✅ Utilise maintenant la méthode du mixin (version robuste)
   Point? _remapSelectedCell({
     required Pento piece,
     required int oldIndex,
     required int newIndex,
     required Point? oldCell,
   }) {
-    if (oldCell == null) return null;
-
-    final oldPos = piece.positions[oldIndex];
-    final newPos = piece.positions[newIndex];
-
-    // Trouver la cellule correspondante dans la nouvelle position
-    if (oldPos.isNotEmpty && newPos.isNotEmpty) {
-      final cellNum = oldPos[0]; // Référence : première cellule
-      if (newPos.contains(cellNum)) {
-        final localX = (cellNum - 1) % 5;
-        final localY = (cellNum - 1) ~/ 5;
-        return Point(localX, localY);
-      }
-    }
-    return null;
+    return remapSelectedCell(
+      piece: piece,
+      oldIndex: oldIndex,
+      newIndex: newIndex,
+      oldCell: oldCell,
+    );
   }
 
 

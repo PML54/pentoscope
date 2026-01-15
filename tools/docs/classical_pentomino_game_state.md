@@ -44,33 +44,3 @@ Obtient l'index de position pour une pièce (par défaut 0)
 int getPiecePositionIndex(int pieceId) {
 ```
 
-### Point
-
-Représente une pièce placée sur le plateau
-
-
-```dart
-yield Point(gridX + localX, gridY + localY);
-```
-
-### copyWith
-
-```dart
-PlacedPiece copyWith({
-```
-
-### PlacedPiece
-
-```dart
-return PlacedPiece( piece: piece ?? this.piece, positionIndex: positionIndex ?? this.positionIndex, gridX: gridX ?? this.gridX, gridY: gridY ?? this.gridY, );
-```
-
-### getOccupiedCells
-
-Obtient les cellules occupées par cette pièce sur le plateau
-
-
-```dart
-List<int> getOccupiedCells() {
-```
-

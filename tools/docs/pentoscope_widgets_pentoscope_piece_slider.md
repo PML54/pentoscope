@@ -10,18 +10,60 @@
 const PentoscopePieceSlider({
 ```
 
+### createState
+
+```dart
+ConsumerState<PentoscopePieceSlider> createState() => _PentoscopePieceSliderState();
+```
+
+### highlightPiece
+
+```dart
+void highlightPiece(int index) {
+```
+
+### clearHighlight
+
+```dart
+void clearHighlight() {
+```
+
+### scrollToPiece
+
+```dart
+void scrollToPiece(int pieceIndex) {
+```
+
+### selectPiece
+
+```dart
+void selectPiece(int pieceIndex) {
+```
+
 ### build
 
 ```dart
-Widget build(BuildContext context, WidgetRef ref) {
+Widget build(BuildContext context) {
 ```
 
-### Padding
+### Container
+
+```dart
+return Container( decoration: isHighlighted ? BoxDecoration( border: Border.all(color: Colors.yellow, width: 3), borderRadius: BorderRadius.circular(8), boxShadow: [ BoxShadow( color: Colors.yellow.withOpacity(0.5), blurRadius: 8, spreadRadius: 2, ), ], ) : null, child: _buildDraggablePiece(piece, notifier, state, settings, widget.isLandscape), );
+```
+
+### SizedBox
 
 Convertit positionIndex interne en displayPositionIndex pour l'affichage
 
 
 ```dart
-return Padding( padding: const EdgeInsets.symmetric(horizontal: 8), child: Container( padding: const EdgeInsets.all(12), decoration: BoxDecoration( color: isSelected ? Colors.amber.shade100 : Colors.transparent, borderRadius: BorderRadius.circular(12), border: isSelected ? Border.all(color: Colors.amber.shade700, width: 3) : null, boxShadow: isSelected ? [ BoxShadow( color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4), ), ] : null, ), child: Transform.rotate( angle: isLandscape ? -math.pi / 2 : 0.0, // ✅ rotation visuelle du slider en paysage child:  Transform.scale( scale:1.5 , child: DraggablePieceWidget( piece: piece, positionIndex: displayPositionIndex, isSelected: isSelected, selectedPositionIndex: isSelected ? displayPositionIndex : state.selectedPositionIndex, longPressDuration: Duration(milliseconds: settings.game.longPressDuration), onSelect: () {
+return SizedBox( width: fixedSize, height: fixedSize, child: Center( child: Transform.rotate( angle: isLandscape ? -math.pi / 2 : 0.0, child: Container( decoration: BoxDecoration( boxShadow: isSelected ? [ BoxShadow( color: Colors.amber.withOpacity(0.7), blurRadius: 14, spreadRadius: 2, ), ] : null, ), child: DraggablePieceWidget( piece: piece, positionIndex: displayPositionIndex, isSelected: isSelected, selectedPositionIndex: isSelected ? displayPositionIndex : state.selectedPositionIndex, longPressDuration: Duration(milliseconds: settings.game.longPressDuration), onSelect: () {
+```
+
+### dispose
+
+```dart
+void dispose() {
 ```
 

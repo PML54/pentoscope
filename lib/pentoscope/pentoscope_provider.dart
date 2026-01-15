@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pentapol/common/pentominos.dart';
 import 'package:pentapol/common/plateau.dart';
 import 'package:pentapol/common/point.dart';
+import 'package:pentapol/common/pentomino_game_mixin.dart';
 import 'package:pentapol/pentoscope/pentoscope_generator.dart';
 import 'package:pentapol/pentoscope/pentoscope_solver.dart'
     show Solution, PentoscopeSolver;
@@ -36,13 +37,35 @@ enum TransformationResult {
   impossible,   // Transformation impossible
 }
 
-class PentoscopeNotifier extends Notifier<PentoscopeState> {
+class PentoscopeNotifier extends Notifier<PentoscopeState> 
+    with PentominoGameMixin {
   late final PentoscopeGenerator _generator;
   late final PentoscopeSolver _solver;
   
   // ⏱️ Timer
   Timer? _gameTimer;
   DateTime? _startTime;
+  
+  // ============================================================================
+  // IMPLÉMENTATION DES MÉTHODES ABSTRAITES DU MIXIN
+  // ============================================================================
+  
+  @override
+  Plateau get currentPlateau => state.plateau;
+  
+  @override
+  Pento? get selectedPiece => state.selectedPiece;
+  
+  @override
+  int get selectedPositionIndex => state.selectedPositionIndex;
+  
+  @override
+  Point? get selectedCellInPiece => state.selectedCellInPiece;
+  
+  @override
+  bool canPlacePiece(Pento piece, int positionIndex, int gridX, int gridY) {
+    return state.canPlacePiece(piece, positionIndex, gridX, gridY);
+  }
 
   TransformationResult applyIsometryRotationCW() {
     return _applyIsoUsingLookup((p, idx) => p.rotationCW(idx));
@@ -710,6 +733,21 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
   // PLACEMENT
   // ==========================================================================
 
+  /// Méthode publique pour obtenir les coordonnées brutes de la mastercase
+  /// Utile pour le widget board qui doit reconstruire les coordonnées de drag
+  /// 
+  /// Note: Cette méthode publique est différente de celle du mixin (qui prend des paramètres)
+  Point? getRawMastercaseCoordsPublic() {
+    if (state.selectedPiece == null || state.selectedCellInPiece == null) {
+      return null;
+    }
+    return super.getRawMastercaseCoords(
+      state.selectedPiece!,
+      state.selectedPositionIndex,
+      state.selectedCellInPiece!,
+    );
+  }
+
   bool tryPlacePiece(int gridX, int gridY) {
     if (state.selectedPiece == null) return false;
 
@@ -720,8 +758,14 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
     int anchorY = gridY;
 
     if (state.selectedCellInPiece != null) {
-      anchorX = gridX - state.selectedCellInPiece!.x;
-      anchorY = gridY - state.selectedCellInPiece!.y;
+      // ✅ Convertir coordonnées normalisées → brutes pour calculer l'ancre
+      final rawMastercase = _getRawMastercaseCoords(
+        piece,
+        positionIndex,
+        state.selectedCellInPiece!,
+      );
+      anchorX = gridX - rawMastercase.x;
+      anchorY = gridY - rawMastercase.y;
     }
 
     if (!state.canPlacePiece(piece, positionIndex, anchorX, anchorY)) {
@@ -832,8 +876,14 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
       int previewY = gridY;
 
       if (state.selectedCellInPiece != null) {
-        previewX -= state.selectedCellInPiece!.x;
-        previewY -= state.selectedCellInPiece!.y;
+        // ✅ Convertir coordonnées normalisées → brutes pour calculer l'ancre
+        final rawMastercase = _getRawMastercaseCoords(
+          state.selectedPiece!,
+          state.selectedPositionIndex,
+          state.selectedCellInPiece!,
+        );
+        previewX -= rawMastercase.x;
+        previewY -= rawMastercase.y;
       }
 
       state = state.copyWith(
@@ -1197,21 +1247,18 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
   }
 
   /// Helper: calcule la mastercase par défaut (première cellule normalisée)
+  /// 
+  /// ✅ Utilise maintenant la méthode du mixin
   Point? _calculateDefaultCell(Pento piece, int positionIndex) {
-    final position = piece.positions[positionIndex];
-    if (position.isEmpty) return null;
+    return calculateDefaultCell(piece, positionIndex);
+  }
 
-    int minX = 5, minY = 5;
-    for (final cellNum in position) {
-      final x = (cellNum - 1) % 5;
-      final y = (cellNum - 1) ~/ 5;
-      if (x < minX) minX = x;
-      if (y < minY) minY = y;
-    }
-    final firstCellNum = position[0];
-    final rawX = (firstCellNum - 1) % 5;
-    final rawY = (firstCellNum - 1) ~/ 5;
-    return Point(rawX - minX, rawY - minY);
+  /// Convertit les coordonnées normalisées de la mastercase en coordonnées brutes
+  /// pour la position actuelle de la pièce (grille 5×5)
+  /// 
+  /// ✅ Utilise maintenant la méthode du mixin (via super pour éviter le conflit de nom)
+  Point _getRawMastercaseCoords(Pento piece, int positionIndex, Point normalizedMastercase) {
+    return super.getRawMastercaseCoords(piece, positionIndex, normalizedMastercase);
   }
 
   /// Annule le mode "pièce placée en main" (sélection sur plateau) en
@@ -1359,10 +1406,8 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
   /// dragGridX/Y = position du doigt sur le plateau
   /// Retourne la position d'ancre valide la plus proche
   /// 
-  /// 🔧 FIX: On cherche la position où N'IMPORTE QUELLE cellule de la pièce
-  /// serait la plus proche du doigt, pas seulement la mastercase.
-  /// Cela permet de déplacer la pièce dans toutes les directions même si
-  /// la mastercase est sur un bord de la pièce.
+  /// ✅ FIX: On cherche la position où la MASTERCASE serait la plus proche du doigt
+  /// Si pas de mastercase définie, on utilise la première cellule normalisée
   Point? _findClosestValidPlacement(int dragGridX, int dragGridY) {
     if (state.validPlacements.isEmpty) return null;
     if (state.selectedPiece == null) return null;
@@ -1370,47 +1415,54 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
     final piece = state.selectedPiece!;
     final positionIndex = state.selectedPositionIndex;
     
-    // Calculer les offsets normalisés des cellules de la pièce
-    final position = piece.positions[positionIndex];
-    int normMinX = 5, normMinY = 5;
-    for (final cellNum in position) {
-      final x = (cellNum - 1) % 5;
-      final y = (cellNum - 1) ~/ 5;
-      if (x < normMinX) normMinX = x;
-      if (y < normMinY) normMinY = y;
-    }
-    
-    final cellOffsets = <Point>[];
-    for (final cellNum in position) {
-      final localX = (cellNum - 1) % 5 - normMinX;
-      final localY = (cellNum - 1) ~/ 5 - normMinY;
-      cellOffsets.add(Point(localX, localY));
+    // Déterminer l'offset normalisé de la mastercase (ou première cellule si pas de mastercase)
+    Point mastercaseOffset;
+    if (state.selectedCellInPiece != null) {
+      // Convertir coordonnées normalisées → brutes, puis calculer offset normalisé
+      final rawMastercase = _getRawMastercaseCoords(
+        piece,
+        positionIndex,
+        state.selectedCellInPiece!,
+      );
+      
+      // Calculer les offsets normalisés pour trouver l'offset de la mastercase
+      final position = piece.positions[positionIndex];
+      int normMinX = 5, normMinY = 5;
+      for (final cellNum in position) {
+        final x = (cellNum - 1) % 5;
+        final y = (cellNum - 1) ~/ 5;
+        if (x < normMinX) normMinX = x;
+        if (y < normMinY) normMinY = y;
+      }
+      
+      // Trouver l'offset normalisé de la mastercase
+      mastercaseOffset = Point(
+        rawMastercase.x - normMinX,
+        rawMastercase.y - normMinY,
+      );
+    } else {
+      // Pas de mastercase : utiliser la première cellule (offset 0,0)
+      mastercaseOffset = Point(0, 0);
     }
 
-    // Chercher le placement valide où UNE cellule est la plus proche du doigt
+    // Chercher le placement valide où la mastercase est la plus proche du doigt
     Point closest = state.validPlacements[0];
     double minDistance = double.infinity;
 
     for (final placement in state.validPlacements) {
-      // Pour ce placement, calculer la distance minimale entre le doigt
-      // et n'importe quelle cellule de la pièce
-      for (final offset in cellOffsets) {
-        final cellX = placement.x + offset.x;
-        final cellY = placement.y + offset.y;
-        final dx = (dragGridX - cellX).toDouble();
-        final dy = (dragGridY - cellY).toDouble();
-        final distance = dx * dx + dy * dy;
+      // Calculer où serait la mastercase pour ce placement
+      final mastercaseX = placement.x + mastercaseOffset.x;
+      final mastercaseY = placement.y + mastercaseOffset.y;
+      
+      // Distance entre le doigt et la mastercase
+      final dx = (dragGridX - mastercaseX).toDouble();
+      final dy = (dragGridY - mastercaseY).toDouble();
+      final distance = dx * dx + dy * dy;
 
-        if (distance < minDistance) {
-          minDistance = distance;
-          closest = placement;
-        }
+      if (distance < minDistance) {
+        minDistance = distance;
+        closest = placement;
       }
-    }
-
-    // Log pour pièce 12 verticale seulement
-    if (piece.id == 12 && positionIndex == 0) {
-      debugPrint('🎯 Snap pièce 12 verticale: doigt=($dragGridX,$dragGridY) → ancre=(${closest.x},${closest.y}) dist=${minDistance.toStringAsFixed(1)}');
     }
 
     return closest;
@@ -1507,39 +1559,21 @@ class PentoscopeNotifier extends Notifier<PentoscopeState> {
   // ISOMÉTRIES (lookup robuste via Pento.cartesianCoords)
   // ==========================================================================
 
+  /// Remapping de la cellule de référence lors d'une isométrie
+  /// 
+  /// ✅ Utilise maintenant la méthode du mixin (même implémentation)
   Point? _remapSelectedCell({
     required Pento piece,
     required int oldIndex,
     required int newIndex,
     required Point? oldCell,
   }) {
-    if (oldCell == null) return null;
-
-    // Coordonnées normalisées dans l'ordre STABLE des cellules (positions)
-    List<Point> coordsInPositionOrder(int posIdx) {
-      final cellNums = piece.positions[posIdx];
-
-      final raw = cellNums.map((cellNum) {
-        final x = (cellNum - 1) % 5;
-        final y = (cellNum - 1) ~/ 5;
-        return Point(x, y);
-      }).toList();
-
-      final minX = raw.map((p) => p.x).reduce((a, b) => a < b ? a : b);
-      final minY = raw.map((p) => p.y).reduce((a, b) => a < b ? a : b);
-
-      // normalisation SANS trier (on garde l'identité géométrique)
-      return raw.map((p) => Point(p.x - minX, p.y - minY)).toList();
-    }
-
-    final oldCoords = coordsInPositionOrder(oldIndex);
-
-    // retrouve l'indice géométrique stable (0..4)
-    final k = oldCoords.indexWhere((p) => p.x == oldCell.x && p.y == oldCell.y);
-    if (k < 0) return oldCell; // sécurité
-
-    final newCoords = coordsInPositionOrder(newIndex);
-    return newCoords[k];
+    return remapSelectedCell(
+      piece: piece,
+      oldIndex: oldIndex,
+      newIndex: newIndex,
+      oldCell: oldCell,
+    );
   }
 
   // ============================================================================

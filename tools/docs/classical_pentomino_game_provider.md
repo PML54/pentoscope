@@ -61,6 +61,16 @@ Annule la sélection en cours
 void cancelSelection() {
 ```
 
+### applyHint
+
+Applique un indice en choisissant une solution compatible aléatoire
+et en plaçant une pièce du slider qui n'est pas encore posée
+
+
+```dart
+void applyHint() {
+```
+
 ### cancelTutorial
 
 Annule le tutoriel (toujours restaurer)

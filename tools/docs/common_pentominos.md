@@ -82,6 +82,18 @@ int symmetryH(int currentPositionIndex) => _applyIso(currentPositionIndex, _flip
 int symmetryV(int currentPositionIndex) => _applyIso(currentPositionIndex, _flipHCoords);
 ```
 
+### symmetryHRelativeToMastercase
+
+```dart
+int symmetryHRelativeToMastercase(int currentPositionIndex, Point mastercase) => _applySymmetryRelativeToPoint(currentPositionIndex, mastercase, isHorizontal: true);
+```
+
+### symmetryVRelativeToMastercase
+
+```dart
+int symmetryVRelativeToMastercase(int currentPositionIndex, Point mastercase) => _applySymmetryRelativeToPoint(currentPositionIndex, mastercase, isHorizontal: false);
+```
+
 ### minIsometriesToReach
 
 Retourne le nombre MIN d'isométries pour aller de startPos à endPos

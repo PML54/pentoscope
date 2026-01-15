@@ -53,9 +53,25 @@ Future<PentoscopePuzzle> generateHard(PentoscopeSize size) async {
 return PentoscopePuzzle( size: size, pieceIds: pieceIds, solutionCount: result.solutionCount, solutions: result.solutions, );
 ```
 
-### PentoscopePuzzle
+### generateFromSeed
 
 Sélectionne N pièces aléatoires parmi les 12 disponibles
+🎮 Génère un puzzle avec un seed et des pièces spécifiques (mode multiplayer)
+Ne vérifie pas les solutions - on fait confiance aux paramètres fournis
+
+
+```dart
+Future<PentoscopePuzzle> generateFromSeed( PentoscopeSize size, int seed, List<int> pieceIds, ) async {
+```
+
+### PentoscopePuzzle
+
+```dart
+return PentoscopePuzzle( size: size, pieceIds: pieceIds, solutionCount: result.solutionCount, solutions: result.solutions, );
+```
+
+### PentoscopePuzzle
+
 Configuration d'un puzzle Pentoscope
 Noms des pièces (X, P, T, F, Y, V, U, L, N, W, Z, I)
 

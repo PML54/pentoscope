@@ -32,9 +32,9 @@ Widget build(BuildContext context, WidgetRef ref) {
 return LayoutBuilder( builder: (context, constraints) {
 ```
 
-### Center
+### Align
 
 ```dart
-return Center( child: Container( width: cellSize * visualCols, height: cellSize * visualRows, decoration: BoxDecoration( gradient: LinearGradient( begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [ Colors.grey.shade50, Colors.grey.shade100, ], ), boxShadow: [ BoxShadow( color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 4), ), ], borderRadius: BorderRadius.circular(16), ), child: ClipRRect( borderRadius: BorderRadius.circular(16), child: DragTarget<Pento>( onWillAcceptWithDetails: (details) => true, onMove: (details) {
+return Align( // En paysage: aligner en haut pour éviter l'espace // En portrait: centrer alignment: isLandscape ? Alignment.topCenter : Alignment.center, child: Container( width: cellSize * visualCols, height: cellSize * visualRows, decoration: BoxDecoration( gradient: LinearGradient( begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [ Colors.grey.shade50, Colors.grey.shade100, ], ), border: Border.all( color: Colors.grey.shade700, width: 3, ), boxShadow: [ BoxShadow( color: Colors.black.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 4), spreadRadius: 2, ), ], borderRadius: BorderRadius.circular(16), ), child: ClipRRect( borderRadius: BorderRadius.circular(16), child: DragTarget<Pento>( onWillAcceptWithDetails: (details) => true, onMove: (details) {
 ```
 

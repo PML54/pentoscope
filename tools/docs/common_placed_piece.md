@@ -57,3 +57,15 @@ return PlacedPiece( piece: piece ?? this.piece, positionIndex: positionIndex ?? 
 String toString() => 'PlacedPiece(${piece.id}, pos=$positionIndex, grid=($gridX,$gridY), iso=$isometriesUsed)';
 ```
 
+### getOccupiedCells
+
+Obtient les numéros de cases occupées par cette pièce sur le plateau 6×10.
+
+Retourne une liste de cellNum (1 à 60) correspondant aux cases occupées.
+Les cases hors limites (x < 0, x >= 6, y < 0, y >= 10) sont ignorées.
+
+
+```dart
+List<int> getOccupiedCells() {
+```
+

@@ -6,18 +6,17 @@
 
 - **classical** (3 fichiers)
 - **common** (8 fichiers)
-- **config** (1 fichiers)
+- **config** (4 fichiers)
 - **data** (1 fichiers)
 - **database** (2 fichiers)
 - **debug** (1 fichiers)
-- **duel** (15 fichiers)
 - **main.dart** (1 fichiers)
 - **models** (1 fichiers)
 - **pentoscope** (7 fichiers)
+- **pentoscope_multiplayer** (6 fichiers)
 - **providers** (1 fichiers)
-- **screens** (12 fichiers)
+- **screens** (14 fichiers)
 - **services** (4 fichiers)
-- **tutorial** (20 fichiers)
 - **utils** (6 fichiers)
 
 ---
@@ -35,6 +34,7 @@
 - `build()`
 - `calculateScore()`
 - `cancelSelection()`
+- `applyHint()`
 - `cancelTutorial()`
 - `onPuzzleCompleted()`
 - `clearBoardHighlight()`
@@ -104,11 +104,10 @@
 - `SizedBox()`
 - `SizedBox()`
 - `Scaffold()`
-- `TutorialOverlay()`
-- `TutorialControls()`
 - `dispose()`
 - `initState()`
 - `didChangeDependencies()`
+- `LayoutBuilder()`
 - `Row()`
 - `Column()`
 - `AnimatedContainer()`
@@ -122,10 +121,6 @@
 - `copyWith()`
 - `PentominoGameState()`
 - `getPiecePositionIndex()`
-- `Point()`
-- `copyWith()`
-- `PlacedPiece()`
-- `getOccupiedCells()`
 
 ---
 
@@ -185,6 +180,8 @@
 - `rotationTW()`
 - `symmetryH()`
 - `symmetryV()`
+- `symmetryHRelativeToMastercase()`
+- `symmetryVRelativeToMastercase()`
 - `minIsometriesToReach()`
 
 ### common/placed_piece.dart
@@ -196,6 +193,7 @@
 - `copyWith()`
 - `PlacedPiece()`
 - `toString()`
+- `getOccupiedCells()`
 
 ### common/plateau.dart
 
@@ -236,6 +234,56 @@
 - `GameIconConfig()`
 - `isVisibleIn()`
 - `getIconsForMode()`
+
+### config/ui_dimensions.dart
+
+**Fonctions :**
+
+- `BoardDimensions()`
+- `SliderDimensions()`
+- `ActionBarDimensions()`
+- `TextDimensions()`
+- `UILayout()`
+
+### config/ui_layout_manager.dart
+
+**Fonctions :**
+
+- `calculate()`
+- `UILayout()`
+- `ActionBarDimensions()`
+- `SliderDimensions()`
+- `BoardDimensions()`
+- `TextDimensions()`
+- `fromContext()`
+- `calculate()`
+- `fromConstraints()`
+- `calculate()`
+
+### config/ui_layout_provider.dart
+
+**Fonctions :**
+
+- `UILayoutState()`
+- `UILayoutState()`
+- `copyWith()`
+- `UILayoutState()`
+- `build()`
+- `updateScreenSize()`
+- `updateBoardSize()`
+- `recalculate()`
+- `UILayoutNotifier()`
+- `UILayoutInitializer()`
+- `createState()`
+- `didChangeDependencies()`
+- `build()`
+- `calculateLayout()`
+- `calculateBoardDimensions()`
+- `calculateLayout()`
+- `calculateSliderDimensions()`
+- `calculateLayout()`
+- `calculateActionBarDimensions()`
+- `calculateLayout()`
 
 ---
 
@@ -380,270 +428,6 @@
 - `Row()`
 - `Row()`
 - `SnackBar()`
-- `SnackBar()`
-
----
-
-## Module: duel
-
-### duel/models/duel_messages.dart
-
-**Fonctions :**
-
-- `toJson()`
-- `encode()`
-- `toJson()`
-- `toJson()`
-- `toJson()`
-- `toJson()`
-- `toJson()`
-- `toJson()`
-- `PongMessage()`
-- `RoomCreatedMessage()`
-- `RoomJoinedMessage()`
-- `PlayerJoinedMessage()`
-- `PlayerLeftMessage()`
-- `GameStartMessage()`
-- `CountdownMessage()`
-- `PiecePlacedMessage()`
-- `PlacementRejectedMessage()`
-- `GameStateMessage()`
-- `GameEndMessage()`
-- `isDraw()`
-- `ErrorMessage()`
-
-### duel/models/duel_state.dart
-
-**Fonctions :**
-
-- `DuelState()`
-- `copyWith()`
-- `DuelState()`
-- `DuelPlayer()`
-- `copyWith()`
-- `DuelPlayer()`
-- `toJson()`
-- `DuelPlayer()`
-- `DuelPlacedPiece()`
-- `toJson()`
-- `DuelPlacedPiece()`
-- `isOwnedBy()`
-
-### duel/providers/duel_provider.dart
-
-**Fonctions :**
-
-- `DuelNotifier()`
-- `build()`
-- `createRoom()`
-- `joinRoom()`
-- `leaveRoom()`
-- `placePiece()`
-- `setReady()`
-
-### duel/screens/duel_create_screen.dart
-
-**Fonctions :**
-
-- `DuelCreateScreen()`
-- `createState()`
-- `initState()`
-- `dispose()`
-- `build()`
-- `Scaffold()`
-- `Icon()`
-- `SizedBox()`
-- `Text()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-
-### duel/screens/duel_game_screen.dart
-
-**Fonctions :**
-
-- `DuelGameScreen()`
-- `createState()`
-- `initState()`
-- `dispose()`
-- `build()`
-- `WillPopScope()`
-- `IconButton()`
-- `Container()`
-- `Column()`
-- `SizedBox()`
-- `LayoutBuilder()`
-- `Center()`
-- `GestureDetector()`
-- `Padding()`
-- `SizedBox()`
-- `Positioned()`
-- `paint()`
-- `shouldRepaint()`
-
-### duel/screens/duel_home_screen.dart
-
-**Fonctions :**
-
-- `DuelHomeScreen()`
-- `build()`
-- `Scaffold()`
-- `Icon()`
-- `SizedBox()`
-- `Text()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `Spacer()`
-- `Text()`
-- `SizedBox()`
-
-### duel/screens/duel_join_screen.dart
-
-**Fonctions :**
-
-- `DuelJoinScreen()`
-- `createState()`
-- `initState()`
-- `dispose()`
-- `build()`
-- `Scaffold()`
-- `Icon()`
-- `SizedBox()`
-- `Text()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `formatEditUpdate()`
-- `TextEditingValue()`
-
-### duel/screens/duel_result_screen.dart
-
-**Fonctions :**
-
-- `DuelResultScreen()`
-- `build()`
-- `Scaffold()`
-- `Spacer()`
-- `SizedBox()`
-- `SizedBox()`
-- `Padding()`
-- `SizedBox()`
-- `Spacer()`
-- `SizedBox()`
-- `SizedBox()`
-- `build()`
-- `Row()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `Icon()`
-
-### duel/screens/duel_settings_screen.dart
-
-**Fonctions :**
-
-- `DuelSettingsScreen()`
-- `createState()`
-- `initState()`
-- `dispose()`
-- `build()`
-- `Scaffold()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `Padding()`
-- `SizedBox()`
-- `TextField()`
-- `Wrap()`
-- `ChoiceChip()`
-- `SizedBox()`
-- `Padding()`
-- `SizedBox()`
-- `SwitchListTile()`
-- `Column()`
-- `Card()`
-- `Divider()`
-- `Icon()`
-- `SizedBox()`
-- `SizedBox()`
-- `Column()`
-- `SizedBox()`
-- `SnackBar()`
-- `SnackBar()`
-- `DuelSettingsTile()`
-- `build()`
-- `ListTile()`
-
-### duel/screens/duel_waiting_screen.dart
-
-**Fonctions :**
-
-- `DuelWaitingScreen()`
-- `build()`
-- `Scaffold()`
-- `SizedBox()`
-- `SizedBox()`
-- `Text()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `Icon()`
-- `SizedBox()`
-- `SizedBox()`
-- `Text()`
-- `Spacer()`
-
-### duel/services/duel_validator.dart
-
-**Fonctions :**
-
-- `initialize()`
-- `loadSolution()`
-- `validatePlacement()`
-- `reset()`
-
-### duel/services/websocket_service.dart
-
-**Fonctions :**
-
-- `connect()`
-- `disconnect()`
-- `send()`
-- `sendRaw()`
-- `connect()`
-- `dispose()`
-
-### duel/widgets/duel_countdown.dart
-
-**Fonctions :**
-
-- `DuelCountdown()`
-- `build()`
-- `Container()`
-
-### duel/widgets/duel_piece_slider.dart
-
-**Fonctions :**
-
-- `DuelPieceSlider()`
-- `build()`
-- `Container()`
-
-### duel/widgets/opponent_piece_overlay.dart
-
-**Fonctions :**
-
-- `OpponentPieceOverlay()`
-- `build()`
-- `Stack()`
-- `paint()`
-- `shouldRepaint()`
 
 ---
 
@@ -654,7 +438,9 @@
 **Fonctions :**
 
 - `main()`
-- `MyApp()`
+- `PentapolApp()`
+- `createState()`
+- `initState()`
 - `build()`
 - `MaterialApp()`
 
@@ -706,6 +492,8 @@
 - `PentoscopePuzzle()`
 - `generateHard()`
 - `PentoscopePuzzle()`
+- `generateFromSeed()`
+- `PentoscopePuzzle()`
 - `PentoscopePuzzle()`
 - `toString()`
 - `PentoscopeSize()`
@@ -721,6 +509,11 @@
 - `applyIsometrySymmetryH()`
 - `applyIsometrySymmetryV()`
 - `build()`
+- `startTimer()`
+- `stopTimer()`
+- `getElapsedSeconds()`
+- `calculateNote()`
+- `applyHint()`
 - `cancelSelection()`
 - `clearPreview()`
 - `cycleToNextOrientation()`
@@ -728,13 +521,32 @@
 - `reset()`
 - `selectPiece()`
 - `selectPlacedPiece()`
+- `Point()`
 - `setViewOrientation()`
+- `startPuzzle()`
+- `startPuzzleFromSeed()`
+- `changeBoardSize()`
 - `startPuzzle()`
 - `tryPlacePiece()`
 - `updatePreview()`
 - `Point()`
+- `Point()`
+- `Point()`
+- `Point()`
+- `Point()`
+- `Point()`
+- `Point()`
+- `Point()`
+- `Point()`
 - `coordsInPositionOrder()`
 - `Point()`
+- `selectPieceFromSliderForTutorial()`
+- `highlightPieceInSlider()`
+- `clearSliderHighlight()`
+- `scrollSliderToPiece()`
+- `placeSelectedPieceForTutorial()`
+- `selectPlacedPieceAt()`
+- `rotateAroundMasterForTutorial()`
 - `PentoscopePlacedPiece()`
 - `Point()`
 - `copyWith()`
@@ -756,6 +568,7 @@
 - `findAllSolutions()`
 - `backtrackAll()`
 - `SolverResult()`
+- `canSolveFrom()`
 - `SolverResult()`
 - `toString()`
 
@@ -764,15 +577,31 @@
 **Fonctions :**
 
 - `PentoscopeGameScreen()`
+- `createState()`
+- `SnackBar()`
+- `SnackBar()`
 - `build()`
 - `Scaffold()`
+- `SizedBox()`
+- `SizedBox()`
+- `Positioned()`
+- `SizedBox()`
+- `Text()`
+- `Padding()`
+- `Container()`
+- `Row()`
+- `Column()`
 - `IconButton()`
 - `Text()`
 - `AnimatedContainer()`
 - `Column()`
 - `Expanded()`
+- `LayoutBuilder()`
 - `Row()`
 - `Expanded()`
+- `Column()`
+- `Text()`
+- `SizedBox()`
 
 ### pentoscope/screens/pentoscope_menu_screen.dart
 
@@ -784,19 +613,12 @@
 - `Scaffold()`
 - `Text()`
 - `SizedBox()`
-- `Text()`
 - `SizedBox()`
 - `Text()`
 - `SizedBox()`
-- `SizedBox()`
-- `Text()`
 - `SizedBox()`
 - `SizedBox()`
 - `Row()`
-- `Expanded()`
-- `SizedBox()`
-- `Row()`
-- `SizedBox()`
 - `Expanded()`
 - `SizedBox()`
 
@@ -805,9 +627,14 @@
 **Fonctions :**
 
 - `PentoscopeBoard()`
+- `createState()`
+- `highlightCell()`
+- `clearHighlights()`
+- `placeSelectedPiece()`
+- `selectPieceOnBoard()`
 - `build()`
 - `LayoutBuilder()`
-- `Center()`
+- `Align()`
 - `SizedBox()`
 - `SizedBox()`
 - `SizedBox()`
@@ -817,8 +644,189 @@
 **Fonctions :**
 
 - `PentoscopePieceSlider()`
+- `createState()`
+- `highlightPiece()`
+- `clearHighlight()`
+- `scrollToPiece()`
+- `selectPiece()`
 - `build()`
+- `Container()`
+- `SizedBox()`
+- `dispose()`
+
+---
+
+## Module: pentoscope_multiplayer
+
+### pentoscope_multiplayer/models/pentoscope_mp_messages.dart
+
+**Fonctions :**
+
+- `toJson()`
+- `encode()`
+- `toJson()`
+- `toJson()`
+- `toJson()`
+- `toJson()`
+- `toJson()`
+- `PlacedPieceSummary()`
+- `toJson()`
+- `toJson()`
+- `fromJson()`
+- `RoomCreatedMessage()`
+- `RoomJoinedMessage()`
+- `PlayerInfo()`
+- `PlayerJoinedMessage()`
+- `PlayerLeftMessage()`
+- `PuzzleReadyMessage()`
+- `CountdownMessage()`
+- `GameStartMessage()`
+- `OpponentProgressMessage()`
+- `PlayerCompletedMessage()`
+- `GameEndMessage()`
+- `RankingEntry()`
+- `ErrorMessage()`
+
+### pentoscope_multiplayer/models/pentoscope_mp_state.dart
+
+**Fonctions :**
+
+- `MPPlacedPiece()`
+- `MPPlacedPiece()`
+- `MPPlayer()`
+- `copyWith()`
+- `MPPlayer()`
+- `toString()`
+- `MPGameConfig()`
+- `MPGameConfig()`
+- `MPGameConfig()`
+- `toPentoscopeSize()`
+- `toString()`
+- `PentoscopeMPState()`
+- `copyWith()`
+- `PentoscopeMPState()`
+- `toString()`
+
+### pentoscope_multiplayer/providers/pentoscope_mp_provider.dart
+
+**Fonctions :**
+
+- `build()`
+- `createRoom()`
+- `Exception()`
+- `joinRoom()`
+- `Exception()`
+- `Exception()`
+- `leaveRoom()`
+- `startGame()`
+- `updateProgress()`
+- `complete()`
+- `startTimer()`
+- `stopTimer()`
+- `getElapsedSeconds()`
+
+### pentoscope_multiplayer/screens/pentoscope_mp_game_screen.dart
+
+**Fonctions :**
+
+- `PentoscopeMPGameScreen()`
+- `createState()`
+- `initState()`
+- `build()`
+- `Scaffold()`
+- `Container()`
+- `Row()`
 - `Padding()`
+- `SizedBox()`
+- `Positioned()`
+- `AnimatedContainer()`
+- `Container()`
+- `SizedBox()`
+- `Icon()`
+- `Column()`
+- `Row()`
+- `SizedBox()`
+- `SizedBox()`
+- `Spacer()`
+- `Spacer()`
+- `Row()`
+- `Column()`
+
+### pentoscope_multiplayer/screens/pentoscope_mp_lobby_screen.dart
+
+**Fonctions :**
+
+- `PentoscopeMPLobbyScreen()`
+- `createState()`
+- `initState()`
+- `SnackBar()`
+- `dispose()`
+- `build()`
+- `Scaffold()`
+- `SingleChildScrollView()`
+- `SizedBox()`
+- `Column()`
+- `SnackBar()`
+- `SizedBox()`
+- `Column()`
+- `SizedBox()`
+- `Padding()`
+- `SizedBox()`
+- `SizedBox()`
+- `Text()`
+- `SizedBox()`
+- `SizedBox()`
+- `SizedBox()`
+- `SizedBox()`
+- `Container()`
+- `Text()`
+- `SizedBox()`
+- `SizedBox()`
+- `SnackBar()`
+- `SizedBox()`
+- `Text()`
+- `Container()`
+- `Column()`
+- `SizedBox()`
+- `Container()`
+- `SizedBox()`
+- `Center()`
+- `Icon()`
+- `SizedBox()`
+- `SizedBox()`
+- `SnackBar()`
+- `SnackBar()`
+- `formatEditUpdate()`
+- `TextEditingValue()`
+
+### pentoscope_multiplayer/screens/pentoscope_mp_result_screen.dart
+
+**Fonctions :**
+
+- `PentoscopeMPResultScreen()`
+- `build()`
+- `Scaffold()`
+- `SizedBox()`
+- `Text()`
+- `SizedBox()`
+- `SizedBox()`
+- `SizedBox()`
+- `SizedBox()`
+- `Container()`
+- `SizedBox()`
+- `SizedBox()`
+- `Padding()`
+- `SizedBox()`
+- `SizedBox()`
+- `SizedBox()`
+- `SizedBox()`
+- `SizedBox()`
+- `Column()`
+- `SizedBox()`
+- `SizedBox()`
+- `Container()`
+- `SizedBox()`
+- `Text()`
 
 ---
 
@@ -878,6 +886,31 @@
 - `SizedBox()`
 - `GestureDetector()`
 
+### screens/demo_screen.dart
+
+**Fonctions :**
+
+- `DemoScreen()`
+- `createState()`
+- `initState()`
+- `dispose()`
+- `AnimatedPieceWidget()`
+- `build()`
+- `Scaffold()`
+- `PentominoGameScreen()`
+- `DemoStep()`
+- `AnimatedPieceWidget()`
+- `createState()`
+- `initState()`
+- `dispose()`
+- `build()`
+- `AnimatedBuilder()`
+- `Positioned()`
+- `PentominoPieceWidget()`
+- `build()`
+- `SizedBox()`
+- `Positioned()`
+
 ### screens/home_screen.dart
 
 **Fonctions :**
@@ -885,8 +918,6 @@
 - `HomeScreen()`
 - `build()`
 - `Scaffold()`
-- `SizedBox()`
-- `SizedBox()`
 - `SizedBox()`
 - `SizedBox()`
 - `SizedBox()`
@@ -915,7 +946,7 @@
 - `createState()`
 - `dispose()`
 - `build()`
-- `Padding()`
+- `SizedBox()`
 
 ### screens/pentomino_game/widgets/shared/action_slider.dart
 
@@ -924,14 +955,9 @@
 - `getCompatibleSolutionsIncludingSelected()`
 - `ActionSlider()`
 - `build()`
+- `LayoutBuilder()`
 - `Column()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
 - `Column()`
-- `SizedBox()`
-- `SizedBox()`
 
 ### screens/pentomino_game/widgets/shared/draggable_piece_widget.dart
 
@@ -949,7 +975,19 @@
 - `GameBoard()`
 - `build()`
 - `LayoutBuilder()`
-- `Center()`
+- `Align()`
+
+### screens/pentomino_game/widgets/shared/highlighted_icon_button.dart
+
+**Fonctions :**
+
+- `HighlightedIconButton()`
+- `createState()`
+- `initState()`
+- `dispose()`
+- `build()`
+- `AnimatedBuilder()`
+- `Container()`
 
 ### screens/pentomino_game/widgets/shared/piece_border_calculator.dart
 
@@ -1119,309 +1157,8 @@
 - `getCompatibleSolutionsFromBigInts()`
 - `getCompatibleSolutionIndices()`
 - `findSolutionIndex()`
-
----
-
-## Module: tutorial
-
-### tutorial/commands/board_selection_commands.dart
-
-**Fonctions :**
-
-- `SelectPieceOnBoardAtCommand()`
-- `execute()`
-- `SelectPieceOnBoardAtCommand()`
-- `SelectPieceOnBoardWithMastercaseCommand()`
-- `execute()`
-- `SelectPieceOnBoardWithMastercaseCommand()`
-- `HighlightPieceOnBoardCommand()`
-- `execute()`
-- `HighlightPieceOnBoardCommand()`
-- `CancelSelectionCommand()`
-- `execute()`
-
-### tutorial/commands/control_commands.dart
-
-**Fonctions :**
-
-- `WaitCommand()`
-- `execute()`
-- `WaitCommand()`
-- `RepeatCommand()`
-- `execute()`
-- `RepeatCommand()`
-
-### tutorial/commands/highlight_commands.dart
-
-**Fonctions :**
-
-- `HighlightCellCommand()`
-- `execute()`
-- `FormatException()`
-- `HighlightCellCommand()`
-- `HighlightCellsCommand()`
-- `execute()`
-- `HighlightCellsCommand()`
-- `HighlightValidPositionsCommand()`
-- `execute()`
-- `FormatException()`
-- `HighlightValidPositionsCommand()`
-- `ClearHighlightsCommand()`
-- `execute()`
-- `HighlightMastercaseCommand()`
-- `execute()`
-- `FormatException()`
-- `HighlightMastercaseCommand()`
-- `ClearMastercaseHighlightCommand()`
-- `execute()`
-
-### tutorial/commands/highlight_isometry_icon.dart
-
-**Fonctions :**
-
-- `HighlightIsometryIconCommand()`
-- `FormatException()`
-- `FormatException()`
-- `HighlightIsometryIconCommand()`
-- `validate()`
-- `execute()`
-- `ClearIsometryIconHighlightCommand()`
-- `execute()`
-
-### tutorial/commands/message_commands.dart
-
-**Fonctions :**
-
-- `ShowMessageCommand()`
-- `execute()`
-- `ShowMessageCommand()`
-- `ClearMessageCommand()`
-- `execute()`
-
-### tutorial/commands/placement_commands.dart
-
-**Fonctions :**
-
-- `PlaceSelectedPieceAtCommand()`
-- `execute()`
-- `PlaceSelectedPieceAtCommand()`
-- `RemovePieceAtCommand()`
-- `execute()`
-- `RemovePieceAtCommand()`
-
-### tutorial/commands/selection_commands.dart
-
-**Fonctions :**
-
-- `SelectPieceFromSliderCommand()`
-- `execute()`
-- `FormatException()`
-- `SelectPieceFromSliderCommand()`
-- `HighlightPieceInSliderCommand()`
-- `execute()`
-- `FormatException()`
-- `HighlightPieceInSliderCommand()`
-- `ClearSliderHighlightCommand()`
-- `execute()`
-- `ScrollSliderCommand()`
-- `execute()`
-- `FormatException()`
-- `ScrollSliderCommand()`
-- `ScrollSliderToPieceCommand()`
-- `execute()`
-- `FormatException()`
-- `ScrollSliderToPieceCommand()`
-- `ResetSliderPositionCommand()`
-- `execute()`
-
-### tutorial/commands/transform_commands.dart
-
-**Fonctions :**
-
-- `RotateAroundMasterCommand()`
-- `execute()`
-- `FormatException()`
-- `FormatException()`
-- `RotateAroundMasterCommand()`
-- `SymmetryAroundMasterCommand()`
-- `execute()`
-- `FormatException()`
-- `FormatException()`
-- `FormatException()`
-- `SymmetryAroundMasterCommand()`
-
-### tutorial/commands/translate_command.dart
-
-**Fonctions :**
-
-- `TranslateCommand()`
-- `execute()`
-- `FormatException()`
-- `FormatException()`
-- `TranslateCommand()`
-
-### tutorial/commands/tutorial_mode_commands.dart
-
-**Fonctions :**
-
-- `EnterTutorialModeCommand()`
-- `execute()`
-- `ExitTutorialModeCommand()`
-- `execute()`
-- `ExitTutorialModeCommand()`
-- `CancelTutorialCommand()`
-- `execute()`
-- `ResetGameCommand()`
-- `execute()`
-
-### tutorial/interpreter/scratch_interpreter.dart
-
-**Fonctions :**
-
-- `run()`
-- `StateError()`
-- `pause()`
-- `resume()`
-- `stop()`
-- `stepNext()`
-- `stepBack()`
-- `reset()`
-
-### tutorial/models/scratch_command.dart
-
-**Fonctions :**
-
-- `ScratchCommand()`
-- `execute()`
-- `validate()`
-- `CompositeCommand()`
-- `execute()`
-- `ConditionalCommand()`
-- `execute()`
-
-### tutorial/models/tutorial_context.dart
-
-**Fonctions :**
-
-- `setMessage()`
-- `clearMessage()`
-- `setVariable()`
-- `getVariable()`
-- `incrementVariable()`
-- `pause()`
-- `resume()`
-- `cancel()`
-- `waitIfPaused()`
-
-### tutorial/models/tutorial_script.dart
-
-**Fonctions :**
-
-- `TutorialScript()`
-- `TutorialScript()`
-- `copyWith()`
-- `TutorialScript()`
-
-### tutorial/models/tutorial_state.dart
-
-**Fonctions :**
-
-- `TutorialState()`
-- `copyWith()`
-- `TutorialState()`
-
-### tutorial/parser/yaml_parser.dart
-
-**Fonctions :**
-
-- `parse()`
-- `FormatException()`
-- `validate()`
-- `ClearMessageCommand()`
-- `EnterTutorialModeCommand()`
-- `CancelTutorialCommand()`
-- `ResetGameCommand()`
-- `ClearSliderHighlightCommand()`
-- `ResetSliderPositionCommand()`
-- `CancelSelectionCommand()`
-- `ClearHighlightsCommand()`
-- `FormatException()`
-
-### tutorial/providers/tutorial_provider.dart
-
-**Fonctions :**
-
-- `TutorialNotifier()`
-- `build()`
-- `loadScript()`
-- `StateError()`
-- `unloadScript()`
-- `start()`
-- `StateError()`
-- `StateError()`
-- `pause()`
-- `resume()`
-- `stop()`
-- `quit()`
-- `restart()`
-- `start()`
-- `stepNext()`
-- `stepBack()`
-- `updateMessage()`
-
-### tutorial/widgets/highlighted_icon_button.dart
-
-**Fonctions :**
-
-- `HighlightedIconButton()`
-- `createState()`
-- `initState()`
-- `dispose()`
-- `build()`
-- `AnimatedBuilder()`
-- `Container()`
-
-### tutorial/widgets/tutorial_controls.dart
-
-**Fonctions :**
-
-- `TutorialControls()`
-- `build()`
-- `Positioned()`
-- `build()`
-- `Row()`
-- `SizedBox()`
-- `build()`
-- `Column()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-- `build()`
-- `Row()`
-- `SizedBox()`
-- `SizedBox()`
-- `SizedBox()`
-
-### tutorial/widgets/tutorial_overlay.dart
-
-**Fonctions :**
-
-- `TutorialOverlay()`
-- `build()`
-- `Stack()`
-- `build()`
-- `Material()`
-- `Icon()`
-- `SizedBox()`
-- `Text()`
-- `SizedBox()`
-- `build()`
-- `Material()`
-- `Icon()`
-- `SizedBox()`
-- `build()`
-- `Material()`
-- `SizedBox()`
+- `solutionToPlacedPieces()`
+- `solutionToPlacedPieces()`
 
 ---
 

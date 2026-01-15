@@ -1,4 +1,5 @@
-import '../common/point.dart';
+
+import 'package:pentapol/common/point.dart';
 import 'package:flutter/foundation.dart';
 
 // lib/models/pentominos.dart

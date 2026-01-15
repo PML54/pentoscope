@@ -88,12 +88,6 @@ return Row( mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [ Text(
 ### SnackBar
 
 ```dart
-const SnackBar( content: Text('✅ Session de test ajoutée!'), backgroundColor: Colors.green, ), );
-```
-
-### SnackBar
-
-```dart
 const SnackBar( content: Text('✅ Toutes les données supprimées!'), backgroundColor: Colors.orange, ), );
 ```
 

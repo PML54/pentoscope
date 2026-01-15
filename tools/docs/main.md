@@ -10,10 +10,22 @@
 void main() async {
 ```
 
-### MyApp
+### PentapolApp
 
 ```dart
-const MyApp({super.key});
+const PentapolApp({super.key});
+```
+
+### createState
+
+```dart
+ConsumerState<PentapolApp> createState() => _PentapolAppState();
+```
+
+### initState
+
+```dart
+void initState() {
 ```
 
 ### build
@@ -25,6 +37,6 @@ Widget build(BuildContext context) {
 ### MaterialApp
 
 ```dart
-return MaterialApp( title: 'Pentapol', theme: ThemeData( useMaterial3: true, colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue), ), home: const HomeScreen(),  routes: {'/game': (context) => const PentominoGameScreen()},
+return MaterialApp( title: 'Pentapol', theme: ThemeData( useMaterial3: true, colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue), ), home: _isInitialized ? const PentoscopeGameScreen() : _buildLoadingScreen(),  routes: {
 ```
 

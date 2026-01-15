@@ -1,6 +1,6 @@
-# tutorial/widgets/highlighted_icon_button.dart
+# screens/pentomino_game/widgets/shared/highlighted_icon_button.dart
 
-**Module:** tutorial
+**Module:** screens
 
 ## Fonctions
 

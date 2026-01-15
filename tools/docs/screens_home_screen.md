@@ -49,18 +49,6 @@ const SizedBox(height: 12), _MenuCard( icon: Icons.search, title: 'Pentominos Sp
 ### SizedBox
 
 ```dart
-const SizedBox(height: 12), _MenuCard( icon: Icons.extension, title: 'Pentominos Classique', subtitle: '9356 Solutions', color: colorScheme.primary, onTap: () {
-```
-
-### SizedBox
-
-```dart
-const SizedBox(height: 12), _MenuCard( icon: Icons.sports_kabaddi, title: 'Duel Isométries', subtitle: 'Affronte un autre joueur ', color: colorScheme.tertiary, onTap: () {
-```
-
-### SizedBox
-
-```dart
 const SizedBox(height: 12), _MenuCard( icon: Icons.settings, title: 'Réglages', subtitle: 'Thème, options, préférences', color: colorScheme.surfaceVariant, foregroundOnColor: colorScheme.onSurfaceVariant, onTap: () {
 ```
 
