@@ -42,7 +42,7 @@ class PlacedPiece {
   /// Exemple: Si piece est en position 2, gridX=5, gridY=3
   /// Retourne les Point(x, y) de chaque cellule occupée
   Iterable<Point> get absoluteCells sync* {
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
 
     // Trouver le décalage minimum pour normaliser la forme
     int minLocalX = 5, minLocalY = 5;

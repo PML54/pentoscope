@@ -4,6 +4,12 @@
 
 ## Fonctions
 
+### canPlacePiece
+
+```dart
+bool canPlacePiece(Pento piece, int positionIndex, int gridX, int gridY) {
+```
+
 ### applyIsometryRotationCW
 
 Applique une rotation 90° horaire
@@ -152,7 +158,7 @@ void clearSliderHighlight() {
 ### cycleToNextOrientation
 
 Cycle vers l'orientation suivante de la pièce sélectionnée
-Passe simplement à l'index suivant dans piece.positions (boucle)
+Passe simplement à l'index suivant dans piece.orientations (boucle)
 
 
 ```dart
@@ -530,7 +536,7 @@ Calcule la nouvelle position locale de la master case après une transformation
 return Point(newLocalX, newLocalY);
 ```
 
-### Point
+### findNearestValidPosition
 
 Vérifie si une pièce peut être placée à une position donnée
 Utilisé après une transformation géométrique
@@ -538,12 +544,23 @@ Calcule le nombre de solutions possibles avec une pièce transformée
 Crée temporairement un plateau avec toutes les pièces incluant la transformée
 Extrait les coordonnées absolues d'une pièce placée
 Cherche la position valide la plus proche dans un rayon donné
-Utilise la distance euclidienne pour trouver vraiment la plus proche
-Recalcule la validité du plateau et les cellules problématiques
-Remapping de la cellule de référence lors d'une isométrie
+
+✅ Utilise maintenant la méthode du mixin
 
 
 ```dart
-return Point(localX, localY);
+return findNearestValidPosition( piece: piece, positionIndex: positionIndex, anchorX: anchorX, anchorY: anchorY, snapRadius: _snapRadius, );
+```
+
+### remapSelectedCell
+
+Recalcule la validité du plateau et les cellules problématiques
+Remapping de la cellule de référence lors d'une isométrie
+
+✅ Utilise maintenant la méthode du mixin (version robuste)
+
+
+```dart
+return remapSelectedCell( piece: piece, oldIndex: oldIndex, newIndex: newIndex, oldCell: oldCell, );
 ```
 

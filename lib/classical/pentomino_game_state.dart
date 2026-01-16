@@ -135,7 +135,7 @@ class PentominoGameState {
 
   /// Vérifie si une pièce peut être placée à une position donnée
   bool canPlacePiece(Pento piece, int positionIndex, int gridX, int gridY) {
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
 
     for (final cellNum in position) {
       // Convertir cellNum (1-25 sur grille 5×5) en coordonnées (x, y)

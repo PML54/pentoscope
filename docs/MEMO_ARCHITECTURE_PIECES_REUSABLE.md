@@ -60,7 +60,7 @@ PARTIE 2: GESTION DU SLIDER (PORTRAIT + PAYSAGE)
 
 int _getDisplayPositionIndex(int positionIndex, Pento piece, bool isLandscape) {
   if (isLandscape) {
-    return (positionIndex - 1 + piece.numPositions) % piece.numPositions;
+    return (positionIndex - 1 + piece.numOrientations) % piece.numOrientations;
   }
   return positionIndex;
 }

@@ -43,7 +43,7 @@ GamePiece rotate() {
 ### GamePiece
 
 ```dart
-return GamePiece( pento: pento, currentOrientation: (currentOrientation + 1) % pento.numPositions, isPlaced: isPlaced, placedX: placedX, placedY: placedY, );
+return GamePiece( pento: pento, currentOrientation: (currentOrientation + 1) % pento.numOrientations, isPlaced: isPlaced, placedX: placedX, placedY: placedY, );
 ```
 
 ### place

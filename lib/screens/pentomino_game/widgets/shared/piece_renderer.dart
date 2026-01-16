@@ -27,7 +27,7 @@ class PieceRenderer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
 
     // Convertir les cellNum (1-25) en coordonnées (x, y)
     final coords = position.map((cellNum) {

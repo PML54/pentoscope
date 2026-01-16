@@ -6,40 +6,40 @@ import 'package:flutter/foundation.dart';
 // Modified: 2512092000
 // Pentominos avec numéros de cases sur grille 5×5
 // Numérotation: ligne 1 (bas) = cases 1-5, ligne 2 = cases 6-10, etc.
-// Les positions préservent l'ordre géométrique des cellules pour le tracking
+// Les orientations préservent l'ordre géométrique des cellules pour le tracking
 
 final List<Pento> pentominos = [
   // Pièce 1
   Pento(
     id: 1,
     size: 5,
-    numPositions: 1,
+    numOrientations: 1,
     baseShape: [2, 6, 7, 8, 12],
     bit6: 7,
     // 0b000111
-    positions: [
+    orientations: [
       [6, 2, 7, 12, 8],
     ],
     cartesianCoords: [
-      [
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [2, 1],
+        [
+          [0, 1],
+          [1, 0],
+          [1, 1],
+          [1, 2],
+          [2, 1],
+        ],
       ],
-    ],
   ),
 
   // Pièce 2
   Pento(
     id: 2,
     size: 5,
-    numPositions: 8,
+    numOrientations: 8,
     baseShape: [1, 2, 6, 7, 12],
     bit6: 11,
     // 0b001011
-    positions: [
+    orientations: [
       [1, 6, 2, 7, 12],
       [3, 2, 8, 7, 6],
       [12, 7, 11, 6, 1],
@@ -50,120 +50,120 @@ final List<Pento> pentominos = [
       [1, 2, 6, 7, 8],
     ],
     cartesianCoords: [
-      [
-        [0, 0],
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [1, 2],
+        [
+          [0, 0],
+          [0, 1],
+          [1, 0],
+          [1, 1],
+          [1, 2],
+        ],
+        [
+          [2, 0],
+          [1, 0],
+          [2, 1],
+          [1, 1],
+          [0, 1],
+        ],
+        [
+          [1, 2],
+          [1, 1],
+          [0, 2],
+          [0, 1],
+          [0, 0],
+        ],
+        [
+          [0, 1],
+          [1, 1],
+          [0, 0],
+          [1, 0],
+          [2, 0],
+        ],
+        [
+          [1, 0],
+          [1, 1],
+          [0, 0],
+          [0, 1],
+          [0, 2],
+        ],
+        [
+          [2, 1],
+          [1, 1],
+          [2, 0],
+          [1, 0],
+          [0, 0],
+        ],
+        [
+          [0, 2],
+          [0, 1],
+          [1, 2],
+          [1, 1],
+          [1, 0],
+        ],
+        [
+          [0, 0],
+          [1, 0],
+          [0, 1],
+          [1, 1],
+          [2, 1],
+        ],
       ],
-      [
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [2, 0],
-        [2, 1],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [1, 1],
-        [1, 2],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [2, 0],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [1, 0],
-        [1, 1],
-      ],
-      [
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [2, 0],
-        [2, 1],
-      ],
-      [
-        [0, 1],
-        [0, 2],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [2, 1],
-      ],
-    ],
   ),
 
   // Pièce 3
   Pento(
     id: 3,
     size: 5,
-    numPositions: 4,
+    numOrientations: 4,
     baseShape: [3, 6, 7, 8, 13],
     bit6: 19,
     // 0b010011
-    positions: [
+    orientations: [
       [6, 7, 3, 8, 13],
       [2, 7, 13, 12, 11],
       [8, 7, 11, 6, 1],
       [12, 7, 1, 2, 3],
     ],
     cartesianCoords: [
-      [
-        [0, 1],
-        [1, 1],
-        [2, 0],
-        [2, 1],
-        [2, 2],
+        [
+          [0, 1],
+          [1, 1],
+          [2, 0],
+          [2, 1],
+          [2, 2],
+        ],
+        [
+          [1, 0],
+          [1, 1],
+          [2, 2],
+          [1, 2],
+          [0, 2],
+        ],
+        [
+          [2, 1],
+          [1, 1],
+          [0, 2],
+          [0, 1],
+          [0, 0],
+        ],
+        [
+          [1, 2],
+          [1, 1],
+          [0, 0],
+          [1, 0],
+          [2, 0],
+        ],
       ],
-      [
-        [0, 2],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [2, 2],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [1, 1],
-        [2, 1],
-      ],
-      [
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [2, 0],
-      ],
-    ],
   ),
 
   // Pièce 4
   Pento(
     id: 4,
     size: 5,
-    numPositions: 8,
+    numOrientations: 8,
     baseShape: [2, 3, 6, 7, 12],
     bit6: 35,
     // 0b100011
-    positions: [
+    orientations: [
       [6, 2, 7, 12, 3],
       [2, 8, 7, 6, 13],
       [8, 12, 7, 2, 11],
@@ -174,74 +174,74 @@ final List<Pento> pentominos = [
       [2, 6, 7, 8, 11],
     ],
     cartesianCoords: [
-      [
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [2, 0],
+        [
+          [0, 1],
+          [1, 0],
+          [1, 1],
+          [1, 2],
+          [2, 0],
+        ],
+        [
+          [1, 0],
+          [2, 1],
+          [1, 1],
+          [0, 1],
+          [2, 2],
+        ],
+        [
+          [2, 1],
+          [1, 2],
+          [1, 1],
+          [1, 0],
+          [0, 2],
+        ],
+        [
+          [1, 2],
+          [0, 1],
+          [1, 1],
+          [2, 1],
+          [0, 0],
+        ],
+        [
+          [2, 1],
+          [1, 0],
+          [1, 1],
+          [1, 2],
+          [0, 0],
+        ],
+        [
+          [1, 2],
+          [2, 1],
+          [1, 1],
+          [0, 1],
+          [2, 0],
+        ],
+        [
+          [0, 1],
+          [1, 2],
+          [1, 1],
+          [1, 0],
+          [2, 2],
+        ],
+        [
+          [1, 0],
+          [0, 1],
+          [1, 1],
+          [2, 1],
+          [0, 2],
+        ],
       ],
-      [
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [2, 1],
-        [2, 2],
-      ],
-      [
-        [0, 2],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [2, 1],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [1, 1],
-        [1, 2],
-        [2, 1],
-      ],
-      [
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [2, 1],
-      ],
-      [
-        [0, 1],
-        [1, 1],
-        [1, 2],
-        [2, 0],
-        [2, 1],
-      ],
-      [
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [2, 2],
-      ],
-      [
-        [0, 1],
-        [0, 2],
-        [1, 0],
-        [1, 1],
-        [2, 1],
-      ],
-    ],
   ),
 
   // Pièce 5
   Pento(
     id: 5,
     size: 5,
-    numPositions: 8,
+    numOrientations: 8,
     baseShape: [2, 7, 11, 12, 17],
     bit6: 13,
     // 0b001101
-    positions: [
+    orientations: [
       [11, 2, 7, 12, 17],
       [2, 9, 8, 7, 6],
       [7, 16, 11, 6, 1],
@@ -252,166 +252,166 @@ final List<Pento> pentominos = [
       [3, 6, 7, 8, 9],
     ],
     cartesianCoords: [
-      [
-        [0, 2],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [1, 3],
+        [
+          [0, 2],
+          [1, 0],
+          [1, 1],
+          [1, 2],
+          [1, 3],
+        ],
+        [
+          [1, 0],
+          [3, 1],
+          [2, 1],
+          [1, 1],
+          [0, 1],
+        ],
+        [
+          [1, 1],
+          [0, 3],
+          [0, 2],
+          [0, 1],
+          [0, 0],
+        ],
+        [
+          [2, 1],
+          [0, 0],
+          [1, 0],
+          [2, 0],
+          [3, 0],
+        ],
+        [
+          [1, 2],
+          [0, 0],
+          [0, 1],
+          [0, 2],
+          [0, 3],
+        ],
+        [
+          [1, 1],
+          [3, 0],
+          [2, 0],
+          [1, 0],
+          [0, 0],
+        ],
+        [
+          [0, 1],
+          [1, 3],
+          [1, 2],
+          [1, 1],
+          [1, 0],
+        ],
+        [
+          [2, 0],
+          [0, 1],
+          [1, 1],
+          [2, 1],
+          [3, 1],
+        ],
       ],
-      [
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [2, 1],
-        [3, 1],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [0, 3],
-        [1, 1],
-      ],
-      [
-        [0, 0],
-        [1, 0],
-        [2, 0],
-        [2, 1],
-        [3, 0],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [0, 3],
-        [1, 2],
-      ],
-      [
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [2, 0],
-        [3, 0],
-      ],
-      [
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [1, 3],
-      ],
-      [
-        [0, 1],
-        [1, 1],
-        [2, 0],
-        [2, 1],
-        [3, 1],
-      ],
-    ],
   ),
 
   // Pièce 6
   Pento(
     id: 6,
     size: 5,
-    numPositions: 4,
+    numOrientations: 4,
     baseShape: [3, 8, 11, 12, 13],
     bit6: 21,
     // 0b010101
-    positions: [
+    orientations: [
       [11, 12, 3, 8, 13],
       [1, 6, 13, 12, 11],
       [3, 2, 11, 6, 1],
       [13, 8, 1, 2, 3],
     ],
     cartesianCoords: [
-      [
-        [0, 2],
-        [1, 2],
-        [2, 0],
-        [2, 1],
-        [2, 2],
+        [
+          [0, 2],
+          [1, 2],
+          [2, 0],
+          [2, 1],
+          [2, 2],
+        ],
+        [
+          [0, 0],
+          [0, 1],
+          [2, 2],
+          [1, 2],
+          [0, 2],
+        ],
+        [
+          [2, 0],
+          [1, 0],
+          [0, 2],
+          [0, 1],
+          [0, 0],
+        ],
+        [
+          [2, 2],
+          [2, 1],
+          [0, 0],
+          [1, 0],
+          [2, 0],
+        ],
       ],
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [1, 2],
-        [2, 2],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [1, 0],
-        [2, 0],
-      ],
-      [
-        [0, 0],
-        [1, 0],
-        [2, 0],
-        [2, 1],
-        [2, 2],
-      ],
-    ],
   ),
 
   // Pièce 7
   Pento(
     id: 7,
     size: 5,
-    numPositions: 4,
+    numOrientations: 4,
     baseShape: [1, 3, 6, 7, 8],
     bit6: 37,
     // 0b100101
-    positions: [
+    orientations: [
       [1, 6, 7, 3, 8],
       [2, 1, 6, 12, 11],
       [8, 3, 2, 6, 1],
       [11, 12, 7, 1, 2],
     ],
     cartesianCoords: [
-      [
-        [0, 0],
-        [0, 1],
-        [1, 1],
-        [2, 0],
-        [2, 1],
+        [
+          [0, 0],
+          [0, 1],
+          [1, 1],
+          [2, 0],
+          [2, 1],
+        ],
+        [
+          [1, 0],
+          [0, 0],
+          [0, 1],
+          [1, 2],
+          [0, 2],
+        ],
+        [
+          [2, 1],
+          [2, 0],
+          [1, 0],
+          [0, 1],
+          [0, 0],
+        ],
+        [
+          [0, 2],
+          [1, 2],
+          [1, 1],
+          [0, 0],
+          [1, 0],
+        ],
       ],
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [1, 0],
-        [1, 2],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [1, 0],
-        [2, 0],
-        [2, 1],
-      ],
-      [
-        [0, 0],
-        [0, 2],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-      ],
-    ],
   ),
 
   // Pièce 8
   Pento(
     id: 8,
     size: 5,
-    numPositions: 8,
+    numOrientations: 8,
     baseShape: [4, 6, 7, 8, 9],
     bit6: 25,
     // 0b011001
-    positions: [
+    orientations: [
       [6, 7, 8, 4, 9],
       [1, 6, 11, 17, 16],
       [4, 3, 2, 6, 1],
@@ -422,74 +422,74 @@ final List<Pento> pentominos = [
       [2, 7, 12, 16, 17],
     ],
     cartesianCoords: [
-      [
-        [0, 1],
-        [1, 1],
-        [2, 1],
-        [3, 0],
-        [3, 1],
+        [
+          [0, 1],
+          [1, 1],
+          [2, 1],
+          [3, 0],
+          [3, 1],
+        ],
+        [
+          [0, 0],
+          [0, 1],
+          [0, 2],
+          [1, 3],
+          [0, 3],
+        ],
+        [
+          [3, 0],
+          [2, 0],
+          [1, 0],
+          [0, 1],
+          [0, 0],
+        ],
+        [
+          [1, 3],
+          [1, 2],
+          [1, 1],
+          [0, 0],
+          [1, 0],
+        ],
+        [
+          [3, 1],
+          [2, 1],
+          [1, 1],
+          [0, 0],
+          [0, 1],
+        ],
+        [
+          [0, 3],
+          [0, 2],
+          [0, 1],
+          [1, 0],
+          [0, 0],
+        ],
+        [
+          [0, 0],
+          [1, 0],
+          [2, 0],
+          [3, 1],
+          [3, 0],
+        ],
+        [
+          [1, 0],
+          [1, 1],
+          [1, 2],
+          [0, 3],
+          [1, 3],
+        ],
       ],
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [0, 3],
-        [1, 3],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [1, 0],
-        [2, 0],
-        [3, 0],
-      ],
-      [
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [1, 3],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [1, 1],
-        [2, 1],
-        [3, 1],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [0, 3],
-        [1, 0],
-      ],
-      [
-        [0, 0],
-        [1, 0],
-        [2, 0],
-        [3, 0],
-        [3, 1],
-      ],
-      [
-        [0, 3],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [1, 3],
-      ],
-    ],
   ),
 
   // Pièce 9
   Pento(
     id: 9,
     size: 5,
-    numPositions: 8,
+    numOrientations: 8,
     baseShape: [3, 4, 6, 7, 8],
     bit6: 41,
     // 0b101001
-    positions: [
+    orientations: [
       [6, 7, 3, 8, 4],
       [1, 6, 12, 11, 17],
       [4, 3, 7, 2, 6],
@@ -500,204 +500,204 @@ final List<Pento> pentominos = [
       [2, 7, 11, 12, 16],
     ],
     cartesianCoords: [
-      [
-        [0, 1],
-        [1, 1],
-        [2, 0],
-        [2, 1],
-        [3, 0],
+        [
+          [0, 1],
+          [1, 1],
+          [2, 0],
+          [2, 1],
+          [3, 0],
+        ],
+        [
+          [0, 0],
+          [0, 1],
+          [1, 2],
+          [0, 2],
+          [1, 3],
+        ],
+        [
+          [3, 0],
+          [2, 0],
+          [1, 1],
+          [1, 0],
+          [0, 1],
+        ],
+        [
+          [1, 3],
+          [1, 2],
+          [0, 1],
+          [1, 1],
+          [0, 0],
+        ],
+        [
+          [3, 1],
+          [2, 1],
+          [1, 0],
+          [1, 1],
+          [0, 0],
+        ],
+        [
+          [0, 3],
+          [0, 2],
+          [1, 1],
+          [0, 1],
+          [1, 0],
+        ],
+        [
+          [0, 0],
+          [1, 0],
+          [2, 1],
+          [2, 0],
+          [3, 1],
+        ],
+        [
+          [1, 0],
+          [1, 1],
+          [0, 2],
+          [1, 2],
+          [0, 3],
+        ],
       ],
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [1, 2],
-        [1, 3],
-      ],
-      [
-        [0, 1],
-        [1, 0],
-        [1, 1],
-        [2, 0],
-        [3, 0],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [1, 1],
-        [1, 2],
-        [1, 3],
-      ],
-      [
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [2, 1],
-        [3, 1],
-      ],
-      [
-        [0, 1],
-        [0, 2],
-        [0, 3],
-        [1, 0],
-        [1, 1],
-      ],
-      [
-        [0, 0],
-        [1, 0],
-        [2, 0],
-        [2, 1],
-        [3, 1],
-      ],
-      [
-        [0, 2],
-        [0, 3],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-      ],
-    ],
   ),
 
   // Pièce 10
   Pento(
     id: 10,
     size: 5,
-    numPositions: 4,
+    numOrientations: 4,
     baseShape: [3, 6, 7, 8, 11],
     bit6: 49,
     // 0b110001
-    positions: [
+    orientations: [
       [6, 11, 7, 3, 8],
       [2, 1, 7, 13, 12],
       [8, 13, 7, 1, 6],
       [12, 11, 7, 3, 2],
     ],
     cartesianCoords: [
-      [
-        [0, 1],
-        [0, 2],
-        [1, 1],
-        [2, 0],
-        [2, 1],
+        [
+          [0, 1],
+          [0, 2],
+          [1, 1],
+          [2, 0],
+          [2, 1],
+        ],
+        [
+          [1, 0],
+          [0, 0],
+          [1, 1],
+          [2, 2],
+          [1, 2],
+        ],
+        [
+          [2, 1],
+          [2, 2],
+          [1, 1],
+          [0, 0],
+          [0, 1],
+        ],
+        [
+          [1, 2],
+          [0, 2],
+          [1, 1],
+          [2, 0],
+          [1, 0],
+        ],
       ],
-      [
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [2, 2],
-      ],
-      [
-        [0, 0],
-        [0, 1],
-        [1, 1],
-        [2, 1],
-        [2, 2],
-      ],
-      [
-        [0, 2],
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [2, 0],
-      ],
-    ],
   ),
 
   // Pièce 11
   Pento(
     id: 11,
     size: 5,
-    numPositions: 4,
+    numOrientations: 4,
     baseShape: [3, 7, 8, 11, 12],
     bit6: 14,
     // 0b001110
-    positions: [
+    orientations: [
       [11, 7, 12, 3, 8],
       [1, 7, 6, 13, 12],
       [3, 7, 2, 11, 6],
       [13, 7, 8, 1, 2],
     ],
     cartesianCoords: [
-      [
-        [0, 2],
-        [1, 1],
-        [1, 2],
-        [2, 0],
-        [2, 1],
+        [
+          [0, 2],
+          [1, 1],
+          [1, 2],
+          [2, 0],
+          [2, 1],
+        ],
+        [
+          [0, 0],
+          [1, 1],
+          [0, 1],
+          [2, 2],
+          [1, 2],
+        ],
+        [
+          [2, 0],
+          [1, 1],
+          [1, 0],
+          [0, 2],
+          [0, 1],
+        ],
+        [
+          [2, 2],
+          [1, 1],
+          [2, 1],
+          [0, 0],
+          [1, 0],
+        ],
       ],
-      [
-        [0, 0],
-        [0, 1],
-        [1, 1],
-        [1, 2],
-        [2, 2],
-      ],
-      [
-        [0, 1],
-        [0, 2],
-        [1, 0],
-        [1, 1],
-        [2, 0],
-      ],
-      [
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [2, 1],
-        [2, 2],
-      ],
-    ],
   ),
 
   // Pièce 12
   Pento(
     id: 12,
     size: 5,
-    numPositions: 2,
+    numOrientations: 2,
     baseShape: [1, 6, 11, 16, 21],
     bit6: 22,
     // 0b010110
-    positions: [
+    orientations: [
       [1, 6, 11, 16, 21],
       [5, 4, 3, 2, 1],
     ],
     cartesianCoords: [
-      [
-        [0, 0],
-        [0, 1],
-        [0, 2],
-        [0, 3],
-        [0, 4],
+        [
+          [0, 0],
+          [0, 1],
+          [0, 2],
+          [0, 3],
+          [0, 4],
+        ],
+        [
+          [4, 0],
+          [3, 0],
+          [2, 0],
+          [1, 0],
+          [0, 0],
+        ],
       ],
-      [
-        [0, 0],
-        [1, 0],
-        [2, 0],
-        [3, 0],
-        [4, 0],
-      ],
-    ],
   ),
 ];
 
 class Pento {
   final int id;
   final int size;
-  final List<List<int>> positions;
+  final List<List<int>> orientations;
   final List<List<List<int>>>
-  cartesianCoords; // Coordonnées (x,y) normalisées et triées
-  final int numPositions;
+  cartesianCoords; // Coordonnées (x,y) normalisées
+  final int numOrientations;
   final List<int> baseShape;
   final int bit6; // code binaire 6 bits unique pour la pièce (0..63)
 
   const Pento({
     required this.id,
     required this.size,
-    required this.positions,
+    required this.orientations,
     required this.cartesianCoords,
-    required this.numPositions,
+    required this.numOrientations,
     required this.baseShape,
     required this.bit6,
   });
@@ -731,7 +731,7 @@ class Pento {
 
   String getLetterForPosition(int positionIndex, int cellNum) {
     const letters = ['A', 'B', 'C', 'D', 'E'];
-    final position = positions[positionIndex];
+    final position = orientations[positionIndex];
     final indexInPosition = position.indexOf(cellNum);
     if (indexInPosition == -1) return '?';
     return letters[indexInPosition];
@@ -791,7 +791,7 @@ class Pento {
       queue.add((pos: symmetryV(current), cost: steps + 1));
     }
 
-    return numPositions; // Pas trouvé (shouldn't happen)
+    return numOrientations; // Pas trouvé (shouldn't happen)
   }
   // ----------------------------
   // Core lookup
@@ -808,15 +808,23 @@ class Pento {
       if (_coordsEqual(transformed, cartesianCoords[i])) return i;
     }
 
-    // Si non trouvé (pièce très symétrique / positions redondantes / données incomplètes),
+    // Si non trouvé (pièce très symétrique / orientations redondantes / données incomplètes),
     // on ne change pas l'index (comportement sûr).
     return currentPositionIndex;
   }
 
+  List<List<int>> _sortedCoords(List<List<int>> coords) {
+    final sorted = coords.map((c) => [c[0], c[1]]).toList();
+    sorted.sort((a, b) => a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);
+    return sorted;
+  }
+
   bool _coordsEqual(List<List<int>> a, List<List<int>> b) {
     if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i][0] != b[i][0] || a[i][1] != b[i][1]) return false;
+    final sa = _sortedCoords(a);
+    final sb = _sortedCoords(b);
+    for (int i = 0; i < sa.length; i++) {
+      if (sa[i][0] != sb[i][0] || sa[i][1] != sb[i][1]) return false;
     }
     return true;
   }
@@ -864,7 +872,7 @@ class Pento {
 
   // Trouve une position existante ou en crée une nouvelle
   int _findOrCreatePosition(List<List<int>> coords) {
-    // Chercher d'abord dans les positions existantes
+    // Chercher d'abord dans les orientations existantes
     for (int i = 0; i < cartesianCoords.length; i++) {
       if (_coordsEqual(coords, cartesianCoords[i])) {
         return i;

@@ -330,7 +330,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     if (state.selectedPiece == null) return;
 
     final piece = state.selectedPiece!;
-    final newIndex = (state.selectedPositionIndex + 1) % piece.numPositions;
+    final newIndex = (state.selectedPositionIndex + 1) % piece.numOrientations;
     final newCell = _calculateDefaultCell(piece, newIndex);
 
     final newIndices = Map<int, int>.from(state.piecePositionIndices);
@@ -501,7 +501,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     final rawLocalY = absoluteY - placed.gridY;
 
     // Convertir en coordonnées normalisées (comme dans _remapSelectedCell)
-    final position = placed.piece.positions[placed.positionIndex];
+    final position = placed.piece.orientations[placed.positionIndex];
     final coords = position.map((cellNum) {
       final x = (cellNum - 1) % 5;
       final y = (cellNum - 1) ~/ 5;
@@ -599,7 +599,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     final piecePositionIndices = <int, int>{};
 
     for (final piece in pieces) {
-      final randomPos = random.nextInt(piece.numPositions);
+      final randomPos = random.nextInt(piece.numOrientations);
       piecePositionIndices[piece.id] = randomPos;
     }
 
@@ -664,7 +664,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     final piecePositionIndices = <int, int>{};
 
     for (final piece in pieces) {
-      final randomPos = random.nextInt(piece.numPositions);
+      final randomPos = random.nextInt(piece.numOrientations);
       piecePositionIndices[piece.id] = randomPos;
     }
 
@@ -1125,8 +1125,8 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     Point? newSelectedCellInPiece;
     if (state.selectedCellInPiece != null) {
       // Utiliser la même logique que _calculatePositionForFixedMastercase pour trouver la nouvelle position relative
-      final originalPosition = sp.piece.positions[oldIdx];
-      final transformedPosition = piece.positions[newIdx];
+      final originalPosition = sp.piece.orientations[oldIdx];
+      final transformedPosition = piece.orientations[newIdx];
       
       final originalCoords = originalPosition.map((cellNum) {
         final x = (cellNum - 1) % 5;
@@ -1186,7 +1186,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
   }) {
     // 1. Trouver le numéro de cellule correspondant à la mastercase dans la position originale
     // On utilise la même logique que _remapSelectedCell pour obtenir les coordonnées normalisées
-    final originalPosition = originalPiece.piece.positions[originalPiece.positionIndex];
+    final originalPosition = originalPiece.piece.orientations[originalPiece.positionIndex];
     final originalCoords = originalPosition.map((cellNum) {
       final x = (cellNum - 1) % 5;
       final y = (cellNum - 1) ~/ 5;
@@ -1208,7 +1208,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     final mastercaseCellNum = originalPosition[mastercaseIndex];
 
     // 3. Trouver où cette cellule se trouve dans la nouvelle orientation
-    final transformedPosition = transformedPiece.piece.positions[transformedPiece.positionIndex];
+    final transformedPosition = transformedPiece.piece.orientations[transformedPiece.positionIndex];
     final cellIndexInTransformed = transformedPosition.indexOf(mastercaseCellNum);
 
     if (cellIndexInTransformed == -1) {
@@ -1328,7 +1328,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
 
     // Trouver la cellule de la mastercase dans la pièce transformée (même logique que _calculatePositionForFixedMastercase)
     final mastercaseCellNum = mastercaseLocal.y * 5 + mastercaseLocal.x + 1;
-    final transformedPosition = piece.piece.positions[piece.positionIndex];
+    final transformedPosition = piece.piece.orientations[piece.positionIndex];
     
     if (!transformedPosition.contains(mastercaseCellNum)) {
       // La mastercase n'existe pas dans cette orientation
@@ -1426,7 +1426,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       );
       
       // Calculer les offsets normalisés pour trouver l'offset de la mastercase
-      final position = piece.positions[positionIndex];
+      final position = piece.orientations[positionIndex];
       int normMinX = 5, normMinY = 5;
       for (final cellNum in position) {
         final x = (cellNum - 1) % 5;
@@ -1477,7 +1477,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     // 🔧 FIX: Calculer les offsets de la pièce pour étendre le balayage
     // Certaines pièces ont des cellules avec des offsets positifs par rapport à l'ancre,
     // donc l'ancre peut être négative pour placer la pièce aux bords gauche/haut
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
     
     // Trouver les offsets min/max de la forme normalisée
     int minOffsetX = 5, minOffsetY = 5;
@@ -1668,7 +1668,7 @@ class PentoscopePlacedPiece {
 
   /// Coordonnées absolues des cellules occupées (normalisées)
   Iterable<Point> get absoluteCells sync* {
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
 
     // Trouver le décalage minimum pour normaliser
     int minLocalX = 5, minLocalY = 5;
@@ -1781,7 +1781,7 @@ class PentoscopeState {
   }
 
   bool canPlacePiece(Pento piece, int positionIndex, int gridX, int gridY) {
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
 
     // Trouver le décalage minimum pour normaliser la forme
     int minLocalX = 5, minLocalY = 5;

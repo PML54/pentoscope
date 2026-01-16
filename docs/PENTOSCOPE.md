@@ -82,7 +82,7 @@ Le solveur utilise 3 techniques d'optimisation inspirées de `PentominoSolver` (
 |-----------|-------------|-------------|
 | **Smallest Free Cell First** | Cible toujours la plus petite case libre (parcours ligne par ligne). Ne teste que les placements qui couvrent cette case. | **80-90%** réduction des tentatives |
 | **Isolated Region Pruning** | Après chaque placement, analyse les régions vides via flood fill. Élimine les branches si région < 5 cases ou non-multiple de 5. | **50-70%** des branches mortes |
-| **Piece Ordering** | Trie les pièces par `numPositions` croissant. Les pièces les plus contraintes (moins d'orientations) sont essayées en premier. | **10-20%** supplémentaire |
+| **Piece Ordering** | Trie les pièces par `numOrientations` croissant. Les pièces les plus contraintes (moins d'orientations) sont essayées en premier. | **10-20%** supplémentaire |
 
 #### Classes
 
@@ -135,7 +135,7 @@ bool _areIsolatedRegionsValid(List<List<int>> plateau, int width, int height)
 // Flood fill pour mesurer une région connexe
 int _floodFill(int x, int y, plateau, visited, width, height)
 
-// Trie les pièces par contrainte (numPositions croissant)
+// Trie les pièces par contrainte (numOrientations croissant)
 List<int> _sortByConstraint(List<int> pieceIds)
 ```
 

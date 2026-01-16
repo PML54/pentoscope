@@ -1,12 +1,21 @@
 #!/bin/bash
 
-# tools/sync_dartfiles.sh
+# tools/sync_dartfiles.sh - VERSION CORRIGÉE
+# Modified: 2025-01-15T11:45:00
 # Orchestre:
 # 1) Génération du CSV dartfiles (scan_dart_files.dart)
-# 2) Recréation des tables (schema.sql)
+# 2) Récréation des tables (schema.sql)
 # 3) Import du CSV dartfiles
 # 4) Extraction des imports (extract_imports.dart)
 # 5) Import du CSV imports
+# 6) Vérification des fichiers orphelins
+# 7) Vérification des fichiers sans dépendances
+# 8) Extraction des fonctions publiques
+# 9) Import des fonctions publiques
+# 10) NOUVEAU: Exécution de check_duplicate_functions.dart avec insertion DB
+# 11) Vérification des imports relatifs
+# 12) Import des imports relatifs
+# 13) Génération de la documentation
 
 set -euo pipefail
 
@@ -50,7 +59,7 @@ fi
 printf "${GREEN}✓ CSV généré: $CSV_DARTFILES${NC}\n\n"
 
 # Étape 2: Créer/réinitialiser la DB
-printf "${YELLOW}2. Recréation des tables...${NC}\n"
+printf "${YELLOW}2. Récréation des tables...${NC}\n"
 if [ ! -f "$DB_FILE" ]; then
   printf "${YELLOW}  Création de la DB: $DB_FILE${NC}\n"
   touch "$DB_FILE"
@@ -179,7 +188,6 @@ printf "${GREEN}✓ Import endfiles: $END_COUNT fichier(s)${NC}\n\n"
 
 # Étape 10: Extraire les fonctions publiques
 printf "${YELLOW}10. Extraction des fonctions publiques...${NC}\n"
-printf "${YELLOW}10. Extraction des fonctions publiques...${NC}\n"
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DB_FILE="$PROJECT_ROOT/tools/db/pentapol.db"
@@ -190,7 +198,6 @@ dart run "$PROJECT_ROOT/tools/check_public_functions.dart" \
   --include-generated false \
   --include-ctors false \
   --include-call true
-
 
 # Importer le CSV functions
 printf "${YELLOW}11. Import des fonctions publiques...${NC}\n"
@@ -236,46 +243,31 @@ EOSQL
 FUNC_COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM functions;")
 printf "${GREEN}✓ Import functions: $FUNC_COUNT fonction(s)${NC}\n\n"
 
-printf "${YELLOW}Détection des fonctions publiques dupliquées...${NC}\n"
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ÉTAPE CRITIQUE 12: DÉTECTION DES DOUBLONS VIA CHECK_DUPLICATE_FUNCTIONS
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-NB=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM transverse_duplicates;")
-printf "${YELLOW}Mise à jour duplicate_functions + transverse_duplicates...${NC}\n"
+printf "${YELLOW}12. Détection des fonctions dupliquées (check_duplicate_functions.dart)...${NC}\n"
 
-printf "${YELLOW}Détection des fonctions publiques dupliquées...${NC}\n"
+# IMPORTANT: Nettoyer d'abord la table duplicate_functions
+sqlite3 "$DB_FILE" "DELETE FROM duplicate_functions;"
 
-sqlite3 "$DB_FILE" <<'EOSQL'
-DELETE FROM duplicate_functions;
+# Exécuter le script Dart qui populera duplicate_functions via SQLite
+dart "$PROJECT_ROOT/tools/check_duplicate_functions.dart"
 
-WITH duplicates AS (
-  SELECT function_name, COUNT(*) AS cnt
-  FROM functions
-  WHERE function_name NOT LIKE '\_%' ESCAPE '\'
-  GROUP BY function_name
-  HAVING COUNT(*) > 1
-)
-INSERT INTO duplicate_functions (
-  function_name,
-  filename,
-  dart_id,
-  relative_path,
-  first_dir,
-  occurrence_count
-)
-SELECT
-  f.function_name,
-  d.filename,
-  d.dart_id,
-  d.relative_path,
-  d.first_dir,
-  dup.cnt
-FROM functions f
-JOIN dartfiles d ON d.dart_id = f.dart_id
-JOIN duplicates dup ON dup.function_name = f.function_name
-WHERE f.function_name NOT LIKE '\_%' ESCAPE '\'
-ORDER BY f.function_name, d.relative_path;
-EOSQL
+# Vérifier que l'insertion a fonctionné
+DUP_COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM duplicate_functions;")
+if [ "$DUP_COUNT" -gt 0 ]; then
+  printf "${GREEN}✓ Doublons détectés: $DUP_COUNT occurrence(s)${NC}\n\n"
+else
+  printf "${YELLOW}⚠ Aucun doublon détecté (normal après filtrage)${NC}\n\n"
+fi
 
-printf "${YELLOW}Mise à jour transverse_duplicates...${NC}\n"
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# ÉTAPE 13: MISE À JOUR TRANSVERSE_DUPLICATES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+printf "${YELLOW}13. Mise à jour transverse_duplicates...${NC}\n"
 
 sqlite3 "$DB_FILE" <<'EOSQL'
 DELETE FROM transverse_duplicates;
@@ -296,21 +288,15 @@ GROUP BY function_name
 HAVING nb_dirs >= 2;
 EOSQL
 
-NB=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM transverse_duplicates;")
-printf "${GREEN}✓ transverse_duplicates: $NB fonction(s)${NC}\n\n"
+TRANSVERSE_COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM transverse_duplicates;")
+printf "${GREEN}✓ transverse_duplicates: $TRANSVERSE_COUNT fonction(s) transverse(s)${NC}\n\n"
 
- NB=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM transverse_duplicates;")
- printf "${GREEN}✓ transverse_duplicates: $NB fonction(s) transverse(s)${NC}\n\n"
-
-COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM duplicate_functions;")
-printf "${GREEN}✓ $COUNT fonctions dupliquées détectées${NC}\n\n"
-
-# Étape 12: Vérifier les imports relatifs
-printf "${YELLOW}12. Vérification des imports relatifs...${NC}\n"
+# Étape 14: Vérifier les imports relatifs
+printf "${YELLOW}14. Vérification des imports relatifs...${NC}\n"
 dart tools/check_relative_imports.dart
 
 # Importer le CSV importbad
-printf "${YELLOW}13. Import du CSV importbad...${NC}\n"
+printf "${YELLOW}15. Import du CSV importbad...${NC}\n"
 
 sqlite3 "$DB_FILE" <<'EOSQL'
 CREATE TEMP TABLE temp_importbad (
@@ -337,17 +323,12 @@ EOSQL
 IMPORTBAD_COUNT=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM importbad;")
 printf "${GREEN}✓ Import importbad: $IMPORTBAD_COUNT import(s) relatif(s)${NC}\n\n"
 
-# Étape 14: Détecter les fonctions dupliquées
-printf "${YELLOW}14. Détection des fonctions dupliquées...${NC}\n"
-dart tools/check_duplicate_functions.dart
-printf "\n"
-
-# Étape 15: Générer la documentation
-printf "${YELLOW}15. Génération de la documentation...${NC}\n"
+# Étape 16: Générer la documentation
+printf "${YELLOW}16. Génération de la documentation...${NC}\n"
 dart tools/generate_dart_documentation.dart
 printf "\n"
 
-# Insérer le scan dans scans
+# Enregistrer le scan dans scans
 SCAN_DATE=$(date +%y%m%d)
 SCAN_TIME=$(date +%H%M%S)
 TOTAL_SIZE=$(sqlite3 "$DB_FILE" "SELECT SUM(size_bytes) FROM dartfiles;")
@@ -356,6 +337,7 @@ sqlite3 "$DB_FILE" "INSERT INTO scans (scan_date, scan_time, total_files, total_
 
 printf "${GREEN}✓ Enregistrement du scan${NC}\n\n"
 
+# Résumé final
 printf "${BOLD}=== Succès ===${NC}\n"
 printf "DB: ${BOLD}$DB_FILE${NC}\n"
 printf "Fichiers: ${BOLD}$COUNT${NC}\n"
@@ -363,7 +345,8 @@ printf "Imports: ${BOLD}$IMPORT_COUNT${NC}\n"
 printf "Fichiers orphelins: ${BOLD}$ORPHAN_COUNT${NC}\n"
 printf "Fichiers sans dépendances: ${BOLD}$END_COUNT${NC}\n"
 printf "Fonctions publiques: ${BOLD}$FUNC_COUNT${NC}\n"
-printf "Fonctions dupliquées: ${BOLD}$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM duplicate_functions;")${NC}\n"
+printf "Doublons détectés: ${BOLD}$DUP_COUNT${NC}\n"
+printf "Doublons transverse: ${BOLD}$TRANSVERSE_COUNT${NC}\n"
 printf "Imports relatifs: ${BOLD}$IMPORTBAD_COUNT${NC}\n"
 printf "Documentation: ${BOLD}tools/docs/${NC}\n"
 printf "Taille: ${BOLD}$(sqlite3 $DB_FILE "SELECT printf('%.2f MB', SUM(size_bytes) / 1024.0 / 1024.0) FROM dartfiles;")${NC}\n"

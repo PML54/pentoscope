@@ -4,6 +4,12 @@
 
 ## Fonctions
 
+### canPlacePiece
+
+```dart
+bool canPlacePiece(Pento piece, int positionIndex, int gridX, int gridY) {
+```
+
 ### applyIsometryRotationCW
 
 ```dart
@@ -180,6 +186,8 @@ await startPuzzle( newSize, difficulty: PentoscopeDifficulty.random, showSolutio
 Méthode publique pour obtenir les coordonnées brutes de la mastercase
 Utile pour le widget board qui doit reconstruire les coordonnées de drag
 
+Note: Cette méthode publique est différente de celle du mixin (qui prend des paramètres)
+
 
 ```dart
 bool tryPlacePiece(int gridX, int gridY) {
@@ -236,27 +244,23 @@ return Point(x, y);
 return Point(newGridX, newGridY);
 ```
 
-### Point
+### calculateDefaultCell
 
 Helper: calcule la mastercase par défaut (première cellule normalisée)
 
+✅ Utilise maintenant la méthode du mixin
+
 
 ```dart
-return Point(rawX - minX, rawY - minY);
+return calculateDefaultCell(piece, positionIndex);
 ```
 
-### Point
+### remapSelectedCell
 
 Convertit les coordonnées normalisées de la mastercase en coordonnées brutes
 pour la position actuelle de la pièce (grille 5×5)
 
-
-```dart
-return Point(x, y);
-```
-
-### coordsInPositionOrder
-
+✅ Utilise maintenant la méthode du mixin (via super pour éviter le conflit de nom)
 Annule le mode "pièce placée en main" (sélection sur plateau) en
 reconstruisant le plateau complet à partir des pièces placées.
 À appeler avant de sélectionner une pièce du slider.
@@ -270,16 +274,13 @@ Retourne la position d'ancre valide la plus proche
 Si pas de mastercase définie, on utilise la première cellule normalisée
 Génère TOUS les placements possibles pour une pièce à une positionIndex donnée
 Retourne une liste de Point (gridX, gridY) où la pièce peut être placée
+Remapping de la cellule de référence lors d'une isométrie
+
+✅ Utilise maintenant la méthode du mixin (même implémentation)
 
 
 ```dart
-List<Point> coordsInPositionOrder(int posIdx) {
-```
-
-### Point
-
-```dart
-return Point(x, y);
+return remapSelectedCell( piece: piece, oldIndex: oldIndex, newIndex: newIndex, oldCell: oldCell, );
 ```
 
 ### selectPieceFromSliderForTutorial

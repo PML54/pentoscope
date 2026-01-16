@@ -32,13 +32,13 @@ class _DemoScreenState extends ConsumerState<DemoScreen> {
       message: 'Découvrez les 12 pièces disponibles',
       duration: 2000,
       action: DemoAction.scrollSlider,
-      positions: 6,
+      orientations: 6,
     ),
     DemoStep(
       message: 'Chaque pièce a sa forme unique',
       duration: 1000,
       action: DemoAction.scrollSlider,
-      positions: 6,
+      orientations: 6,
     ),
     DemoStep(
       message: 'On peut aussi transformer les pièces dans le slider !',
@@ -276,7 +276,7 @@ class _DemoScreenState extends ConsumerState<DemoScreen> {
           if (placedPiece != null) {
             // Calculer la mastercase (première cellule de la pièce)
             final position =
-                placedPiece.piece.positions[placedPiece.positionIndex];
+                placedPiece.piece.orientations[placedPiece.positionIndex];
             if (position.isNotEmpty) {
               final firstCellNum = position.first;
               final mastercaseX = placedPiece.gridX + (firstCellNum - 1) % 5;
@@ -309,8 +309,8 @@ class _DemoScreenState extends ConsumerState<DemoScreen> {
         break;
 
       case DemoAction.scrollSlider:
-        if (step.positions != null) {
-          gameNotifier.scrollSlider(step.positions!);
+        if (step.orientations != null) {
+          gameNotifier.scrollSlider(step.orientations!);
         }
         break;
 
@@ -509,7 +509,7 @@ class DemoStep {
   final int? pieceNumber;
   final int? gridX;
   final int? gridY;
-  final int? positions; // pour scrollSlider
+  final int? orientations; // pour scrollSlider
   final String? iconName; // pour highlightIcon
 
   const DemoStep({
@@ -519,7 +519,7 @@ class DemoStep {
     this.pieceNumber,
     this.gridX,
     this.gridY,
-    this.positions,
+    this.orientations,
     this.iconName,
   });
 }
@@ -645,7 +645,7 @@ class PentominoPieceWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
 
     // Calculer les dimensions de la pièce
     int minX = 5, maxX = 0, minY = 5, maxY = 0;

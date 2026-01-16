@@ -127,7 +127,7 @@ class _PieceSliderState extends ConsumerState<PieceSlider> {
     // pour que les pièces correspondent visuellement à l'orientation du plateau
     int displayPositionIndex = positionIndex;
     if (widget.isLandscape) {
-      displayPositionIndex = (positionIndex + 3) % piece.numPositions;
+      displayPositionIndex = (positionIndex + 3) % piece.numOrientations;
     }
 
     final isSelected = state.selectedPiece?.id == piece.id;

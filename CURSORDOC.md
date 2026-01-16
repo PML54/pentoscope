@@ -99,7 +99,7 @@ Définit les 12 pièces de pentomino avec toutes leurs rotations/symétries.
 class Pento {
   final int id;              // 1-12
   final int size;            // Toujours 5 (pentomino)
-  final int numPositions;    // 1-8 (selon symétries)
+  final int numOrientations;    // 1-8 (selon symétries)
   final List<int> baseShape; // Forme de base (numéros 1-25 sur grille 5×5)
   final List<List<int>> positions; // Toutes rotations/symétries
   final int bit6;            // Code unique 6 bits (1-12)
@@ -121,7 +121,7 @@ final pieces = pentominos;
 
 // Accéder à une pièce
 final piece1 = pentominos[0]; // Pièce id=1
-print('${piece1.numPositions} orientations'); // 1
+print('${piece1.numOrientations} orientations'); // 1
 ```
 
 ---
@@ -220,7 +220,7 @@ Wrapper autour de `Pento` pour le jeu interactif.
 ```dart
 class GamePiece {
   final Pento piece;
-  final int currentOrientation;  // 0 à numPositions-1
+  final int currentOrientation;  // 0 à numOrientations-1
   final bool isPlaced;
   final int? placedX, placedY;
   

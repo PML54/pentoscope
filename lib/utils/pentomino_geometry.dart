@@ -60,7 +60,7 @@ class PentominoGeometry {
 
   factory PentominoGeometry.analyze(Pento piece) {
     final rotationCenter = getPieceRotationCenter(piece);
-    final positionCenters = piece.positions
+    final positionCenters = piece.orientations
         .map((pos) => calculateBarycenter(pos))
         .toList();
 
@@ -77,7 +77,7 @@ class PentominoGeometry {
 
     // Pour l'instant, description simple basée sur le nombre de positions
     // On peut affiner avec une vraie détection de rotation/symétrie
-    final numPos = piece.numPositions;
+    final numPos = piece.numOrientations;
 
     if (numPos == 1) return 'Unique (symétrie complète)';
     if (numPos == 2) return positionIndex == 1 ? 'Rotation 90°' : 'Position $positionIndex';

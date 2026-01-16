@@ -128,9 +128,9 @@ class Piece:
         return str(canonical.squares)
 
     def get_free_sides(self):
-        """Retourne les positions libres adjacentes aux carrés de la pièce"""
+        """Retourne les orientations libres adjacentes aux carrés de la pièce"""
         occupied = set(self.squares)
-        free_positions = set()
+        free_orientations = set()
 
         for x, y in self.squares:
             # 4 directions: Nord, Sud, Est, Ouest
@@ -143,9 +143,9 @@ class Piece:
 
             for pos in candidates:
                 if pos not in occupied:
-                    free_positions.add(pos)
+                    free_orientations.add(pos)
 
-        return list(free_positions)
+        return list(free_orientations)
 
 
 def generate_polyominoes(n: int) -> List[Piece]:
@@ -243,15 +243,15 @@ def export_to_dart(pieces: List[Piece], filename: str = "pentominos.dart", grid_
         f.write("class Pento {\n")
         f.write("  final int id;\n")
         f.write("  final int size;\n")
-        f.write("  final List<List<int>> positions;\n")
-        f.write("  final int numPositions;\n")
+        f.write("  final List<List<int>> orientations;\n")
+        f.write("  final int numOrientations;\n")
         f.write("  final List<int> baseShape;\n")
         f.write("  \n")
         f.write("  const Pento({\n")
         f.write("    required this.id,\n")
         f.write("    required this.size,\n")
-        f.write("    required this.positions,\n")
-        f.write("    required this.numPositions,\n")
+        f.write("    required this.orientations,\n")
+        f.write("    required this.numOrientations,\n")
         f.write("    required this.baseShape,\n")
         f.write("  });\n")
         f.write("}\n\n")
@@ -268,15 +268,15 @@ def export_to_dart(pieces: List[Piece], filename: str = "pentominos.dart", grid_
             f.write("  Pento(\n")
             f.write(f"    id: {idx},\n")
             f.write(f"    size: {len(piece.squares)},\n")
-            f.write(f"    numPositions: {len(transformations)},\n")
+            f.write(f"    numOrientations: {len(transformations)},\n")
 
             # Base shape en numéros de cases (triée pour compatibilité)
             base_cells_sorted = sorted([coords_to_cell_number(x, y, grid_width) for x, y in base_shape.squares])
             f.write(f"    baseShape: {base_cells_sorted},\n")
 
-            # Toutes les positions en numéros de cases
+            # Toutes les orientations en numéros de cases
             # IMPORTANT : ne PAS trier pour préserver la correspondance géométrique !
-            f.write("    positions: [\n")
+            f.write("    orientations: [\n")
             for transform in transformations:
                 # Ne PAS trier : l'ordre des cellules correspond à l'ordre géométrique
                 cells = [coords_to_cell_number(x, y, grid_width) for x, y in transform.squares]
@@ -307,8 +307,8 @@ def print_summary(pieces: List[Piece], grid_width: int = 5):
         print(f"  Base (cases): {base_cells}")
 
     print(f"\n{'='*60}")
-    total_positions = sum(len(p.get_ordered_transformations()) for p in pieces)
-    print(f"Total: {len(pieces)} pièces, {total_positions} positions au total")
+    total_orientations = sum(len(p.get_ordered_transformations()) for p in pieces)
+    print(f"Total: {len(pieces)} pièces, {total_orientations} orientations au total")
     print(f"{'='*60}\n")
 
 

@@ -134,12 +134,12 @@ class PentominoSolver {
       // Essayer chaque orientation
       for (
         int orientation = 0;
-        orientation < piece.numPositions;
+        orientation < piece.numOrientations;
         orientation++
       ) {
         attemptCount++;
 
-        final shape = piece.positions[orientation];
+        final shape = piece.orientations[orientation];
 
         // Calculer la translation nécessaire
         final minShapeCell = shape.reduce((a, b) => a < b ? a : b);
@@ -227,10 +227,10 @@ class PentominoSolver {
     for (final piece in availablePieces) {
       for (
         int orientation = 0;
-        orientation < piece.numPositions;
+        orientation < piece.numOrientations;
         orientation++
       ) {
-        final shape = piece.positions[orientation];
+        final shape = piece.orientations[orientation];
         final shapeCoords = GamePiece.shapeToCoordinates(shape);
 
         // Normaliser la forme
@@ -361,13 +361,13 @@ class PentominoSolver {
 
         for (
           int orientation = 0;
-          orientation < piece.numPositions;
+          orientation < piece.numOrientations;
           orientation++
         ) {
           if (_shouldStopCounting) return;
 
           attemptCount++;
-          final shape = piece.positions[orientation];
+          final shape = piece.orientations[orientation];
 
           // Yield périodiquement pour permettre la mise à jour UI (toutes les 50ms)
           final now = DateTime.now().millisecondsSinceEpoch;
@@ -507,7 +507,7 @@ class PentominoSolver {
 
         for (
           int orientation = 0;
-          orientation < piece.numPositions;
+          orientation < piece.numOrientations;
           orientation++
         ) {
           attemptCount++;
@@ -519,7 +519,7 @@ class PentominoSolver {
             lastYieldTime = now;
           }
 
-          final shape = piece.positions[orientation];
+          final shape = piece.orientations[orientation];
           final minShapeCell = shape.reduce((a, b) => a < b ? a : b);
           final shapeCellX = (minShapeCell - 1) % 5;
           final shapeCellY = (minShapeCell - 1) ~/ 5;
@@ -604,7 +604,7 @@ class PentominoSolver {
       final lastTargetCell = lastPlacement.targetCell;
 
       final piece = pieces[lastPieceIndex];
-      final shape = piece.positions[lastOrientation];
+      final shape = piece.orientations[lastOrientation];
       removeWithOffset(shape, lastPlacement.offsetX, lastPlacement.offsetY);
       piecesUsed[lastPieceIndex] = false;
 
@@ -759,12 +759,12 @@ class PentominoSolver {
       // Explorer toutes les orientations pour cette targetCell
       for (
         int orientation = orientationStart;
-        orientation < piece.numPositions;
+        orientation < piece.numOrientations;
         orientation++
       ) {
         attemptCount++;
 
-        final shape = piece.positions[orientation];
+        final shape = piece.orientations[orientation];
 
         // Calculer la translation nécessaire
         final minShapeCell = shape.reduce((a, b) => a < b ? a : b);

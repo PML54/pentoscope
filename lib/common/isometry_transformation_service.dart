@@ -96,7 +96,7 @@ class IsometryTransformationService {
       int gridX,
       int gridY,
       ) {
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
 
     // Trouver le décalage minimum pour normaliser la forme
     int minLocalX = 5, minLocalY = 5;

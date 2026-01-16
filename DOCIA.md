@@ -537,7 +537,7 @@ class Plateau {
 ```dart
 class Pento {
   final int id;                    // 1-12
-  final int numPositions;          // 1-8 (rotations/symétries)
+  final int numOrientations;          // 1-8 (rotations/symétries)
   final List<List<int>> positions; // Toutes les orientations
   final int bit6;                  // Code unique 6 bits
 }

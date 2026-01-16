@@ -5,7 +5,7 @@
 ## Modules
 
 - **classical** (3 fichiers)
-- **common** (8 fichiers)
+- **common** (9 fichiers)
 - **config** (4 fichiers)
 - **data** (1 fichiers)
 - **database** (2 fichiers)
@@ -27,6 +27,7 @@
 
 **Fonctions :**
 
+- `canPlacePiece()`
 - `applyIsometryRotationCW()`
 - `applyIsometryRotationTW()`
 - `applyIsometrySymmetryH()`
@@ -89,7 +90,8 @@
 - `undoLastPlacement()`
 - `updatePreview()`
 - `Point()`
-- `Point()`
+- `findNearestValidPosition()`
+- `remapSelectedCell()`
 
 ### classical/pentomino_game_screen.dart
 
@@ -164,6 +166,20 @@
 - `applySymmetryV()`
 - `canPlacePiece()`
 - `UnimplementedError()`
+
+### common/pentomino_game_mixin.dart
+
+**Fonctions :**
+
+- `canPlacePiece()`
+- `coordsInPositionOrder()`
+- `Point()`
+- `getRawMastercaseCoords()`
+- `Point()`
+- `Point()`
+- `calculateAnchorPosition()`
+- `Point()`
+- `Point()`
 
 ### common/pentominos.dart
 
@@ -504,6 +520,7 @@
 
 **Fonctions :**
 
+- `canPlacePiece()`
 - `applyIsometryRotationCW()`
 - `applyIsometryRotationTW()`
 - `applyIsometrySymmetryH()`
@@ -536,10 +553,8 @@
 - `Point()`
 - `Point()`
 - `Point()`
-- `Point()`
-- `Point()`
-- `coordsInPositionOrder()`
-- `Point()`
+- `calculateDefaultCell()`
+- `remapSelectedCell()`
 - `selectPieceFromSliderForTutorial()`
 - `highlightPieceInSlider()`
 - `clearSliderHighlight()`

@@ -3,7 +3,7 @@
 // Solveur backtracking OPTIMISÉ avec :
 // - Heuristique "Smallest Free Cell First"
 // - Détection des zones isolées (pruning)
-// - Tri des pièces par contrainte (numPositions croissant)
+// - Tri des pièces par contrainte (numOrientations croissant)
 
 import 'dart:async';
 import 'package:pentapol/common/pentominos.dart';
@@ -128,7 +128,7 @@ class PentoscopeSolver {
         final pento = _pieceMap[pieceId]!;
 
         // Essayer chaque orientation
-        for (int posIndex = 0; posIndex < pento.numPositions; posIndex++) {
+        for (int posIndex = 0; posIndex < pento.numOrientations; posIndex++) {
           // ✨ OPTIMISATION 1 (suite): Ne tester que les placements qui couvrent targetCell
           final placement = _findPlacementCoveringCell(
             pento,
@@ -274,7 +274,7 @@ class PentoscopeSolver {
       final pento = _pieceMap[pieceId]!;
 
       // Essayer chaque orientation
-      for (int posIndex = 0; posIndex < pento.numPositions; posIndex++) {
+      for (int posIndex = 0; posIndex < pento.numOrientations; posIndex++) {
         final placement = _findPlacementCoveringCell(
           pento,
           posIndex,
@@ -433,7 +433,7 @@ class PentoscopeSolver {
     sorted.sort((a, b) {
       final pentoA = _pieceMap[a]!;
       final pentoB = _pieceMap[b]!;
-      return pentoA.numPositions.compareTo(pentoB.numPositions);
+      return pentoA.numOrientations.compareTo(pentoB.numOrientations);
     });
     return sorted;
   }
@@ -471,7 +471,7 @@ class PentoscopeSolver {
       final pento = _pieceMap[pieceId]!;
 
       // Essayer chaque orientation
-      for (int posIndex = 0; posIndex < pento.numPositions; posIndex++) {
+      for (int posIndex = 0; posIndex < pento.numOrientations; posIndex++) {
         // ✨ Ne tester que les placements qui couvrent targetCell
         final placement = _findPlacementCoveringCell(
           pento,

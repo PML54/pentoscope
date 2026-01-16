@@ -5,15 +5,15 @@
 class Pento {
   final int id;
   final int size;
-  final List<List<int>> positions;
-  final int numPositions;
+  final List<List<int>> orientations;
+  final int numOrientations;
   final List<int> baseShape;
   
   const Pento({
     required this.id,
     required this.size,
-    required this.positions,
-    required this.numPositions,
+    required this.orientations,
+    required this.numOrientations,
     required this.baseShape,
   });
 }
@@ -23,9 +23,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 1,
     size: 5,
-    numPositions: 1,
+    numOrientations: 1,
     baseShape: [2, 6, 7, 8, 12],
-    positions: [
+    orientations: [
       [6, 2, 7, 12, 8],
     ],
   ),
@@ -34,9 +34,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 2,
     size: 5,
-    numPositions: 8,
+    numOrientations: 8,
     baseShape: [1, 2, 6, 7, 12],
-    positions: [
+    orientations: [
       [1, 6, 2, 7, 12],
       [3, 2, 8, 7, 6],
       [12, 7, 11, 6, 1],
@@ -52,9 +52,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 3,
     size: 5,
-    numPositions: 4,
+    numOrientations: 4,
     baseShape: [3, 6, 7, 8, 13],
-    positions: [
+    orientations: [
       [6, 7, 3, 8, 13],
       [2, 7, 13, 12, 11],
       [8, 7, 11, 6, 1],
@@ -66,9 +66,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 4,
     size: 5,
-    numPositions: 8,
+    numOrientations: 8,
     baseShape: [2, 3, 6, 7, 12],
-    positions: [
+    orientations: [
       [6, 2, 7, 12, 3],
       [2, 8, 7, 6, 13],
       [8, 12, 7, 2, 11],
@@ -84,9 +84,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 5,
     size: 5,
-    numPositions: 8,
+    numOrientations: 8,
     baseShape: [2, 7, 11, 12, 17],
-    positions: [
+    orientations: [
       [11, 2, 7, 12, 17],
       [2, 9, 8, 7, 6],
       [7, 16, 11, 6, 1],
@@ -102,9 +102,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 6,
     size: 5,
-    numPositions: 4,
+    numOrientations: 4,
     baseShape: [3, 8, 11, 12, 13],
-    positions: [
+    orientations: [
       [11, 12, 3, 8, 13],
       [1, 6, 13, 12, 11],
       [3, 2, 11, 6, 1],
@@ -116,9 +116,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 7,
     size: 5,
-    numPositions: 4,
+    numOrientations: 4,
     baseShape: [1, 3, 6, 7, 8],
-    positions: [
+    orientations: [
       [1, 6, 7, 3, 8],
       [2, 1, 6, 12, 11],
       [8, 3, 2, 6, 1],
@@ -130,9 +130,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 8,
     size: 5,
-    numPositions: 8,
+    numOrientations: 8,
     baseShape: [4, 6, 7, 8, 9],
-    positions: [
+    orientations: [
       [6, 7, 8, 4, 9],
       [1, 6, 11, 17, 16],
       [4, 3, 2, 6, 1],
@@ -148,9 +148,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 9,
     size: 5,
-    numPositions: 8,
+    numOrientations: 8,
     baseShape: [3, 4, 6, 7, 8],
-    positions: [
+    orientations: [
       [6, 7, 3, 8, 4],
       [1, 6, 12, 11, 17],
       [4, 3, 7, 2, 6],
@@ -166,9 +166,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 10,
     size: 5,
-    numPositions: 4,
+    numOrientations: 4,
     baseShape: [3, 6, 7, 8, 11],
-    positions: [
+    orientations: [
       [6, 11, 7, 3, 8],
       [2, 1, 7, 13, 12],
       [8, 13, 7, 1, 6],
@@ -180,9 +180,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 11,
     size: 5,
-    numPositions: 4,
+    numOrientations: 4,
     baseShape: [3, 7, 8, 11, 12],
-    positions: [
+    orientations: [
       [11, 7, 12, 3, 8],
       [1, 7, 6, 13, 12],
       [3, 7, 2, 11, 6],
@@ -194,9 +194,9 @@ final List<Pento> pentominos = [
   Pento(
     id: 12,
     size: 5,
-    numPositions: 2,
+    numOrientations: 2,
     baseShape: [1, 6, 11, 16, 21],
-    positions: [
+    orientations: [
       [1, 6, 11, 16, 21],
       [5, 4, 3, 2, 1],
     ],

@@ -24,7 +24,7 @@ List<BigInt> getCompatibleSolutionsIncludingSelected(PentominoGameState state) {
   final tempPlateau = Plateau.allVisible(6, 10);
 
   for (final placed in state.placedPieces) {
-    final position = placed.piece.positions[placed.positionIndex];
+    final position = placed.piece.orientations[placed.positionIndex];
     for (final cellNum in position) {
       final localX = (cellNum - 1) % 5;
       final localY = (cellNum - 1) ~/ 5;
@@ -37,7 +37,7 @@ List<BigInt> getCompatibleSolutionsIncludingSelected(PentominoGameState state) {
   }
 
   final selectedPiece = state.selectedPlacedPiece!;
-  final position = selectedPiece.piece.positions[state.selectedPositionIndex];
+  final position = selectedPiece.piece.orientations[state.selectedPositionIndex];
   for (final cellNum in position) {
     final localX = (cellNum - 1) % 5;
     final localY = (cellNum - 1) ~/ 5;

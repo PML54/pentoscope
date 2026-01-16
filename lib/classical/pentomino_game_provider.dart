@@ -172,7 +172,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
 
       // Replacer toutes les pièces déjà placées
       for (final placed in state.placedPieces) {
-        final position = placed.piece.positions[placed.positionIndex];
+        final position = placed.piece.orientations[placed.positionIndex];
 
         for (final cellNum in position) {
           final localX = (cellNum - 1) % 5;
@@ -184,7 +184,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
       }
 
       // Replacer la pièce qui était sélectionnée à sa position d'origine
-      final position = placedPiece.piece.positions[state.selectedPositionIndex];
+      final position = placedPiece.piece.orientations[state.selectedPositionIndex];
       for (final cellNum in position) {
         final localX = (cellNum - 1) % 5;
         final localY = (cellNum - 1) ~/ 5;
@@ -275,7 +275,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     // 6️⃣ Reconstruire le plateau avec la nouvelle pièce
     final newPlateau = Plateau.allVisible(6, 10);
     for (final placed in newPlaced) {
-      final position = placed.piece.positions[placed.positionIndex];
+      final position = placed.piece.orientations[placed.positionIndex];
       for (final cellNum in position) {
         final localX = (cellNum - 1) % 5;
         final localY = (cellNum - 1) ~/ 5;
@@ -407,13 +407,13 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
   }
 
   /// Cycle vers l'orientation suivante de la pièce sélectionnée
-  /// Passe simplement à l'index suivant dans piece.positions (boucle)
+  /// Passe simplement à l'index suivant dans piece.orientations (boucle)
   void cycleToNextOrientation() {
     // Pour une pièce sélectionnée (pas encore placée)
     if (state.selectedPiece != null) {
       final piece = state.selectedPiece!;
       final currentIndex = state.selectedPositionIndex;
-      final nextIndex = (currentIndex + 1) % piece.numPositions;
+      final nextIndex = (currentIndex + 1) % piece.numOrientations;
 
 
       // Sauvegarder le nouvel index dans le Map
@@ -433,7 +433,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     if (state.selectedPlacedPiece != null) {
       final selectedPiece = state.selectedPlacedPiece!;
       final currentIndex = selectedPiece.positionIndex;
-      final nextIndex = (currentIndex + 1) % selectedPiece.piece.numPositions;
+      final nextIndex = (currentIndex + 1) % selectedPiece.piece.numOrientations;
 
 
       // Créer la pièce avec la nouvelle orientation
@@ -584,7 +584,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
   /// Trouve la pièce placée à une position donnée
   PlacedPiece? getPlacedPieceAt(int gridX, int gridY) {
     for (final placed in state.placedPieces) {
-      final position = placed.piece.positions[placed.positionIndex];
+      final position = placed.piece.orientations[placed.positionIndex];
 
       for (final cellNum in position) {
         final localX = (cellNum - 1) % 5;
@@ -680,7 +680,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
       for (int x = 0; x < 6; x++) {
         if (state.canPlacePiece(piece, positionIndex, x, y)) {
           // Ajouter toutes les cases que la pièce occuperait
-          final position = piece.positions[positionIndex];
+          final position = piece.orientations[positionIndex];
           for (final cellNum in position) {
             final localX = (cellNum - 1) % 5;
             final localY = (cellNum - 1) ~/ 5;
@@ -713,7 +713,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
 
     // IMPORTANT : Calculer l'offset de la mastercase
     // La première cellule de position[0] est la mastercase
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
     final mastercellNum = position.first;
     final masterLocalX = (mastercellNum - 1) % 5;
     final masterLocalY = (mastercellNum - 1) ~/ 5;
@@ -732,7 +732,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     // Créer le plateau avec toutes les pièces existantes
     final newPlateau = Plateau.allVisible(6, 10);
     for (final placed in state.placedPieces) {
-      final pos = placed.piece.positions[placed.positionIndex];
+      final pos = placed.piece.orientations[placed.positionIndex];
       for (final cellNum in pos) {
         final localX = (cellNum - 1) % 5;
         final localY = (cellNum - 1) ~/ 5;
@@ -789,7 +789,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     // Replacer toutes les pièces sauf celle à retirer
     for (final placed in state.placedPieces) {
       if (placed != placedPiece) {
-        final position = placed.piece.positions[placed.positionIndex];
+        final position = placed.piece.orientations[placed.positionIndex];
 
         for (final cellNum in position) {
           final localX = (cellNum - 1) % 5;
@@ -907,7 +907,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
 
       // Replacer toutes les pièces déjà placées
       for (final placed in state.placedPieces) {
-        final position = placed.piece.positions[placed.positionIndex];
+        final position = placed.piece.orientations[placed.positionIndex];
 
         for (final cellNum in position) {
           final localX = (cellNum - 1) % 5;
@@ -919,7 +919,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
       }
 
       // Replacer la pièce qui était sélectionnée
-      final position = placedPiece.piece.positions[placedPiece.positionIndex];
+      final position = placedPiece.piece.orientations[placedPiece.positionIndex];
       for (final cellNum in position) {
         final localX = (cellNum - 1) % 5;
         final localY = (cellNum - 1) ~/ 5;
@@ -939,7 +939,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     }
 
     // Définir une case de référence par défaut (première case de la pièce)
-    final position = piece.positions[savedIndex];
+    final position = piece.orientations[savedIndex];
     Point? defaultCell;
     if (position.isNotEmpty) {
       final firstCellNum = position[0];
@@ -988,7 +988,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
 
       // Replacer toutes les pièces déjà placées
       for (final placed in state.placedPieces) {
-        final pos = placed.piece.positions[placed.positionIndex];
+        final pos = placed.piece.orientations[placed.positionIndex];
         for (final cellNum in pos) {
           final localX = (cellNum - 1) % 5;
           final localY = (cellNum - 1) ~/ 5;
@@ -999,7 +999,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
       }
 
       // Replacer l'ancienne pièce sélectionnée
-      final oldPosition = oldPiece.piece.positions[state.selectedPositionIndex];
+      final oldPosition = oldPiece.piece.orientations[state.selectedPositionIndex];
       for (final cellNum in oldPosition) {
         final localX = (cellNum - 1) % 5;
         final localY = (cellNum - 1) ~/ 5;
@@ -1025,7 +1025,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     }
 
     // Trouver quelle case de la pièce correspond à (cellX, cellY)
-    final position = placedPiece.piece.positions[placedPiece.positionIndex];
+    final position = placedPiece.piece.orientations[placedPiece.positionIndex];
     Point? selectedCell;
 
     for (final cellNum in position) {
@@ -1053,7 +1053,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     // Replacer toutes les pièces SAUF celle sélectionnée
     for (final placed in state.placedPieces) {
       if (placed != placedPiece) {
-        final pos = placed.piece.positions[placed.positionIndex];
+        final pos = placed.piece.orientations[placed.positionIndex];
 
         for (final cellNum in pos) {
           final localX = (cellNum - 1) % 5;
@@ -1239,7 +1239,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     );
 
     // Placer la nouvelle pièce
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
 
     for (final cellNum in position) {
       // Convertir cellNum (1-25 sur grille 5×5) en coordonnées (x, y)
@@ -1277,7 +1277,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
       // Retirer la pièce du plateau pour qu'elle reste "flottante" (sélectionnée)
       final plateauSansPiece = Plateau.allVisible(6, 10);
       for (final placed in state.placedPieces) {
-        final pos = placed.piece.positions[placed.positionIndex];
+        final pos = placed.piece.orientations[placed.positionIndex];
         for (final cellNum in pos) {
           final localX = (cellNum - 1) % 5;
           final localY = (cellNum - 1) ~/ 5;
@@ -1358,7 +1358,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     // Replacer toutes les pièces sauf la dernière
     for (int i = 0; i < state.placedPieces.length - 1; i++) {
       final placed = state.placedPieces[i];
-      final position = placed.piece.positions[placed.positionIndex];
+      final position = placed.piece.orientations[placed.positionIndex];
 
       for (final cellNum in position) {
         // Convertir cellNum (1-25 sur grille 5×5) en coordonnées (x, y)
@@ -1494,7 +1494,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
   /// Vérifie si une pièce peut être placée à une position donnée
   /// Utilisé après une transformation géométrique
   bool _canPlacePieceAt(ShapeMatch match, PlacedPiece? excludePiece) {
-    final position = match.piece.positions[match.positionIndex];
+    final position = match.piece.orientations[match.positionIndex];
 
     for (final cellNum in position) {
       final localX = (cellNum - 1) % 5;
@@ -1525,7 +1525,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
 
     // Placer toutes les pièces déjà placées (sauf celle en transformation)
     for (final placed in state.placedPieces) {
-      final position = placed.piece.positions[placed.positionIndex];
+      final position = placed.piece.orientations[placed.positionIndex];
       for (final cellNum in position) {
         final localX = (cellNum - 1) % 5;
         final localY = (cellNum - 1) ~/ 5;
@@ -1539,7 +1539,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
 
     // Placer la pièce transformée
     final position =
-    transformedPiece.piece.positions[transformedPiece.positionIndex];
+    transformedPiece.piece.orientations[transformedPiece.positionIndex];
     for (final cellNum in position) {
       final localX = (cellNum - 1) % 5;
       final localY = (cellNum - 1) ~/ 5;
@@ -1556,7 +1556,7 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
 
   /// Extrait les coordonnées absolues d'une pièce placée
   List<List<int>> _extractAbsoluteCoords(PlacedPiece piece) {
-    final position = piece.piece.positions[piece.positionIndex];
+    final position = piece.piece.orientations[piece.positionIndex];
     return position.map((cellNum) {
       final localX = (cellNum - 1) % 5;
       final localY = (cellNum - 1) ~/ 5;

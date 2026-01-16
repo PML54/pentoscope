@@ -32,7 +32,7 @@ Modèles réutilisables utilisés par **Isopento** et d'autres modules (Pentapol
 // Modified: 2512092000
 // Pentominos avec numéros de cases sur grille 5×5
 // Numérotation: ligne 1 (bas) = cases 1-5, ligne 2 = cases 6-10, etc.
-// Les positions préservent l'ordre géométrique des cellules pour le tracking
+// Les orientations préservent l'ordre géométrique des cellules pour le tracking
 ```
 
 **plateau.dart**
@@ -76,9 +76,9 @@ Modèles réutilisables utilisés par **Isopento** et d'autres modules (Pentapol
 ```dart
 final int id;                             // 1-12 (identifiant unique)
 final int size;                           // Toujours 5 (pentomino = 5 cellules)
-final List<List<int>> positions;          // Toutes les orientations distinctes
+final List<List<int>> orientations;          // Toutes les orientations distinctes
 final List<List<List<int>>> cartesianCoords; // Coords (x,y) normalisées par orientation
-final int numPositions;                   // Nombre d'orientations distinctes
+final int numOrientations;                   // Nombre d'orientations distinctes
 final List<int> baseShape;                // Cellules de référence (ordre géométrique)
 final int bit6;                           // Code binaire unique (6 bits, 0..63)
 ```
@@ -92,7 +92,7 @@ final int bit6;                           // Code binaire unique (6 bits, 0..63)
 
 **Orientations** :
 - Chaque pento peut avoir 1-8 orientations distinctes
-- Stockées dans `positions[0..numPositions-1]`
+- Stockées dans `orientations[0..numOrientations-1]`
 - Ordre géométrique préservé pour tracking cellule-lettre (A-E)
 
 **Lettres géométriques (A-E)** :
@@ -145,8 +145,8 @@ int _findTransformedPosition(posIdx, transform)
 final List<Pento> pentominos = [
   // 12 pièces avec :
   // - id: 1-12
-  // - numPositions: 1-8 (dépend symétries)
-  // - positions: liste des orientations (cellules 1-25)
+  // - numOrientations: 1-8 (dépend symétries)
+  // - orientations: liste des orientations (cellules 1-25)
   // - cartesianCoords: coords (x,y) normalisées pour chaque orientation
   // - baseShape: ordre géométrique de référence
   // - bit6: code unique pour bitmask
@@ -329,8 +329,8 @@ if (route.contains(Point(1, 0))) {
 
 ```
 Pento (12 pièces)
-  ├─ positions[0..numPositions] : List<int>
-  ├─ cartesianCoords[0..numPositions] : List<List<int>>
+  ├─ orientations[0..numOrientations] : List<int>
+  ├─ cartesianCoords[0..numOrientations] : List<List<int>>
   └─ Méthodes isométries (rotation, symétries)
      └─ Utilisées par isopento_provider pour calculs
 
@@ -380,7 +380,7 @@ Pento → aucune dépendance
 - Conversion : `(cellNum - 1) % 5`, `(cellNum - 1) ~/ 5`
 
 **Ordre géométrique** :
-- `baseShape` et `positions` conservent ordre cellules
+- `baseShape` et `orientations` conservent ordre cellules
 - Permet mapping stable cellule ↔ lettre (A-E)
 - Essentiel pour shape recognition
 
@@ -433,5 +433,5 @@ Pento → aucune dépendance
 - Pento.scale() pour variantes (pentomino → hexomino)
 
 **Robustesse** :
-- Validation Pento à construction (positions valides)
+- Validation Pento à construction (orientations valides)
 - Plateau.validate() pour debug

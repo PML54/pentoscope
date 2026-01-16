@@ -160,7 +160,7 @@ void selectPiece(int? pieceIndex) {
   // Calculer la cellule de référence (coin supérieur gauche)
   final piece = state.availablePieces[pieceIndex];
   final orientation = state.pieceOrientations[pieceIndex] ?? 0;
-  final shape = piece.positions[orientation];
+  final shape = piece.orientations[orientation];
   final coords = GamePiece.shapeToCoordinates(shape);
   
   final minX = coords.map((p) => p.x).reduce(min);
@@ -314,7 +314,7 @@ void updatePreview(int? gridX, int? gridY) {
 bool canPlacePiece(int pieceIndex, int gridX, int gridY) {
   final piece = availablePieces[pieceIndex];
   final orientation = pieceOrientations[pieceIndex] ?? 0;
-  final shape = piece.positions[orientation];
+  final shape = piece.orientations[orientation];
   final coords = GamePiece.shapeToCoordinates(shape);
 
   // Ajuster avec la cellule de référence
@@ -362,7 +362,7 @@ bool canPlacePiece(int pieceIndex, int gridX, int gridY) {
 if (state.previewX != null && state.previewY != null) {
   final piece = state.availablePieces[state.selectedPiece!];
   final orientation = state.selectedOrientation;
-  final shape = piece.positions[orientation];
+  final shape = piece.orientations[orientation];
   final coords = GamePiece.shapeToCoordinates(shape);
 
   for (final coord in coords) {
@@ -687,7 +687,7 @@ class PlacedPiece {
 
   /// Retourne les cellules occupées (coordonnées absolues)
   List<Point> getOccupiedCells() {
-    final shape = piece.positions[positionIndex];
+    final shape = piece.orientations[positionIndex];
     final relativeCoords = GamePiece.shapeToCoordinates(shape);
     
     return relativeCoords.map(
@@ -742,7 +742,7 @@ void cycleOrientation() {
 
   final piece = state.availablePieces[state.selectedPiece!];
   final currentOrientation = state.selectedOrientation;
-  final newOrientation = (currentOrientation + 1) % piece.numPositions;
+  final newOrientation = (currentOrientation + 1) % piece.numOrientations;
 
   final newOrientations = Map<int, int>.from(state.pieceOrientations);
   newOrientations[state.selectedPiece!] = newOrientation;

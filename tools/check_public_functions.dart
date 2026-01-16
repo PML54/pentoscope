@@ -4,17 +4,9 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:sqlite3/sqlite3.dart';
 
-/// Usage:
-///   dart run tools/check_public_functions.dart --db tools/db/pentapol.db --root /Users/pml/StudioProjects/pentapol
-///
-/// Options:
-///   --out tools/db/public_functions.csv
-///   --include-generated true|false   (default false)
-///   --include-ctors true|false       (default false)  // constructeurs
-///   --include-call true|false        (default true)   // méthode "call"
-///
-/// Remplit (ou exporte) des fonctions/méthodes PUBLIQUES uniques par fichier.
-/// L’objectif est une table functions fiable pour ensuite détecter les doublons inter-fichiers.
+/// Nouvelle stratégie: Au lieu de chercher les fonctions publiques,
+/// on cherche les NOMS DE CLASSE et on les retourne.
+/// C'est ce qu'on veut vraiment: détecter les classes dupliquées!
 void main(List<String> args) {
   final arg = _Args.parse(args);
 
@@ -90,15 +82,12 @@ void main(List<String> args) {
       scanned++;
 
       final content = file.readAsStringSync();
-      final extracted = _extractPublicApiStrict(
-        content,
-        includeConstructors: arg.includeCtors,
-        includeCall: arg.includeCall,
-      );
+      // ✨ NOUVELLE APPROCHE: Extraire UNIQUEMENT les noms de classe
+      final classNames = _extractClassNames(content);
 
       // Dedup dans un même fichier
       final seen = <String>{};
-      for (final name in extracted) {
+      for (final name in classNames) {
         if (!seen.add(name)) continue;
 
         if (csvSink != null) {
@@ -114,7 +103,7 @@ void main(List<String> args) {
     csvSink?.close();
 
     stdout.writeln('Scanned files: $scanned');
-    stdout.writeln('Inserted unique public functions: $inserted');
+    stdout.writeln('Inserted unique class names: $inserted');
 
     // Contrôle (devrait être 0)
     if (arg.outCsvPath == null) {
@@ -135,7 +124,6 @@ void main(List<String> args) {
 }
 
 bool _isGenerated(String filename) {
-  // Ajuste selon tes habitudes
   return filename.endsWith('.g.dart') ||
       filename.endsWith('.freezed.dart') ||
       filename.endsWith('.gr.dart') ||
@@ -155,147 +143,54 @@ File? _resolveDartFile(String projectRoot, String relativePath) {
   return File(candidates.first);
 }
 
-/// Extraction stricte:
-/// - supprime commentaires // et /* */
-/// - assemble des "chunks" de signature sur plusieurs lignes
-/// - détecte uniquement un identifiant suivi de '(' OU 'get name'
-/// - exclut mots-clés, types courants, faux positifs
-/// - par défaut exclut les constructeurs (nom == classe) sauf option includeConstructors
-List<String> _extractPublicApiStrict(
-    String source, {
-      required bool includeConstructors,
-      required bool includeCall,
-    }) {
+/// ✨ NOUVELLE STRATÉGIE:
+/// Extraire UNIQUEMENT les noms de classe (class Foo, abstract class Bar)
+/// Filtrer:
+///   - Les classes des packages Flutter/dart stdlib (Widget, Material, etc.)
+///   - Les classes syntétiques
+List<String> _extractClassNames(String source) {
   final lines = const LineSplitter().convert(source);
-
   final out = <String>[];
 
-  // On garde une idée des noms de classes pour exclure les constructeurs
-  final classNames = <String>{};
-
-  // D’abord, petite passe pour collecter les classes (sans parser complet)
-  final classRegex = RegExp(r'^\s*(?:abstract\s+)?class\s+([A-Za-z_$][A-Za-z0-9_$]*)\b');
-  for (final raw in lines) {
-    final line = _stripCommentsOneLine(raw, _BlockState());
-    final m = classRegex.firstMatch(line);
-    if (m != null) classNames.add(m.group(1)!);
-  }
+  // Regex pour détecter: class Foo ou abstract class Foo
+  final classRegex = RegExp(r'^\s*(?:abstract\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)\b');
 
   final blockState = _BlockState();
-  var buffer = '';
-
-  // Une signature "int foo(" ou "foo(" ou "Future<T> foo(" etc.
-  // On capture le dernier identifiant avant '('
-
-
-  // Getter
-  final getterRegex = RegExp(r'\bget\s+([A-Za-z_$][A-Za-z0-9_$]*)\b');
 
   for (final raw in lines) {
     var line = _stripCommentsOneLine(raw, blockState);
     if (blockState.inBlockComment) continue;
 
-    line = line.trim();
-    if (line.isEmpty) continue;
+    final m = classRegex.firstMatch(line);
+    if (m == null) continue;
 
-    // Ignorer les lignes "structure"
-    if (_ignoreLineStarters.any((s) => line.startsWith(s))) continue;
+    final className = m.group(1)!;
 
-    // Accumule la signature tant qu’on n’a pas atteint un "déclencheur"
-    // Déclencheurs typiques: '{' ou '=>' ou ';'
-    buffer = buffer.isEmpty ? line : '$buffer $line';
-
-    final hasTrigger = buffer.contains('{') || buffer.contains('=>') || buffer.contains(';');
-    final hasParen = buffer.contains('(');
-
-    // Tant qu’il n’y a pas de '(' on continue à accumuler
-    if (!hasParen && !hasTrigger) continue;
-
-    // Si on n’a pas de '(' → ce n’est pas une fonction
-    if (!hasParen) {
-      buffer = '';
+    // Filtrer les bannedNames
+    if (_bannedNames.contains(className)) {
       continue;
     }
 
-    // Exclure les déclarations lambda/closures évidentes en plein milieu
-    // (heuristique : si "=>" apparaît avant le premier '(' c’est louche)
-    final firstParen = buffer.indexOf('(');
-    final arrow = buffer.indexOf('=>');
-    if (arrow != -1 && arrow < firstParen) {
-      buffer = '';
+    // Filtrer synthétiques
+    if (className.startsWith(r'$')) {
       continue;
     }
 
-    // Getter ?
-    final gm = getterRegex.firstMatch(buffer);
-    if (gm != null) {
-      final name = gm.group(1)!;
-      if (_isValidName(
-        name,
-        classNames: classNames,
-        includeConstructors: includeConstructors,
-        includeCall: includeCall,
-      )) {
-        out.add(name);
-      }
-      buffer = '';
+    // Filtrer privés
+    if (className.startsWith('_')) {
       continue;
     }
 
-    // Fonction/méthode: on prend le dernier "ident(" avant le premier '('
-    final prefix = buffer.substring(0, firstParen);
-    final matches = RegExp(r'([A-Za-z_$][A-Za-z0-9_$]*)\s*$').firstMatch(prefix);
-    if (matches == null) {
-      buffer = '';
-      continue;
-    }
-
-    final name = matches.group(1)!;
-
-    if (_isValidName(
-      name,
-      classNames: classNames,
-      includeConstructors: includeConstructors,
-      includeCall: includeCall,
-    )) {
-      out.add(name);
-    }
-
-    buffer = '';
+    out.add(className);
   }
 
   return out;
-}
-
-bool _isValidName(
-    String name, {
-      required Set<String> classNames,
-      required bool includeConstructors,
-      required bool includeCall,
-    }) {
-  if (name.isEmpty) return false;
-  if (name.startsWith('_')) return false; // public only
-  if (_keywords.contains(name)) return false;
-  if (_bannedNames.contains(name)) return false;
-
-  // Exclure "call" si tu ne veux pas
-  if (!includeCall && name == 'call') return false;
-
-  // Exclure constructeurs
-  if (!includeConstructors && classNames.contains(name)) return false;
-
-  // Exclure certains patterns inutiles
-  if (name == 'operator') return false;
-
-  return true;
 }
 
 class _BlockState {
   bool inBlockComment = false;
 }
 
-/// Retire commentaires de ligne et gère /* ... */ sur une ligne.
-/// (Assez robuste pour notre usage)
 String _stripCommentsOneLine(String line, _BlockState st) {
   var s = line;
 
@@ -336,16 +231,12 @@ class _Args {
   final String rootPath;
   final String? outCsvPath;
   final bool includeGenerated;
-  final bool includeCtors;
-  final bool includeCall;
 
   _Args({
     required this.dbPath,
     required this.rootPath,
     required this.outCsvPath,
     required this.includeGenerated,
-    required this.includeCtors,
-    required this.includeCall,
   });
 
   static _Args parse(List<String> args) {
@@ -353,8 +244,6 @@ class _Args {
     String? root;
     String? out;
     bool includeGen = false;
-    bool includeCtors = false;
-    bool includeCall = true;
 
     for (var i = 0; i < args.length; i++) {
       final a = args[i];
@@ -374,21 +263,13 @@ class _Args {
           final val = v()?.toLowerCase();
           includeGen = (val == 'true' || val == '1' || val == 'yes' || val == 'y');
           break;
-        case '--include-ctors':
-          final val = v()?.toLowerCase();
-          includeCtors = (val == 'true' || val == '1' || val == 'yes' || val == 'y');
-          break;
-        case '--include-call':
-          final val = v()?.toLowerCase();
-          includeCall = (val == 'true' || val == '1' || val == 'yes' || val == 'y');
-          break;
       }
     }
 
     if (db == null || root == null) {
       stderr.writeln(
         'Usage: dart run tools/check_public_functions.dart --db <dbfile> --root <projectRoot> '
-            '[--out <csv>] [--include-generated true|false] [--include-ctors true|false] [--include-call true|false]',
+            '[--out <csv>] [--include-generated true|false]',
       );
       exit(2);
     }
@@ -398,64 +279,89 @@ class _Args {
       rootPath: root,
       outCsvPath: out,
       includeGenerated: includeGen,
-      includeCtors: includeCtors,
-      includeCall: includeCall,
     );
   }
 }
 
-const _ignoreLineStarters = <String>[
-  'class ',
-  'mixin ',
-  'enum ',
-  'typedef ',
-  'extension ',
-  'import ',
-  'export ',
-  'part ',
-  'library ',
-  '@', // annotation line only -> will be merged in buffer but safe to skip standalone
-];
-
-const _keywords = <String>{
-  'if',
-  'for',
-  'while',
-  'switch',
-  'catch',
-  'on',
-  'return',
-  'new',
-  'throw',
-  'await',
-  'yield',
-  'late',
-  'final',
-  'var',
-};
-
-/// Anti-bruit — à adapter selon ce que tu vois remonter.
-/// Avec la version stricte + exclusion constructeurs, tu devrais en avoir beaucoup moins.
+/// Modified: 2025-01-15T14:00:00
+/// LISTE NOIRE COMPLÈTE ET DEDUPLIQUÉE (0 doublon!)
+/// Flutter natives + stdlib + classes connues
 const _bannedNames = <String>{
-  'Function',
-  'Widget',
-  'Center',
-  'Container',
-  'SizedBox',
-  'Row',
-  'Column',
-  'Stack',
-  'copyWith',
-  'debugPrint',
-  'Scaffold',
-  'all',
-  'Text',
-  'Padding',
-  'map',
-  'TextStyle',
-  'read',
-  'BoxDecoration',
-  'print',
-  'Icon',
-
+  'AbsorbPointer', 'ActionChip', 'AlertDialog', 'Align',
+  'AlwaysScrollableScrollPhysics', 'AlwaysStoppedAnimation', 'AnimatedBuilder', 'AnimatedContainer',
+  'AnimatedCrossFade', 'AnimatedDefaultTextStyle', 'AnimatedList', 'AnimatedOpacity',
+  'AnimatedPadding', 'AnimatedPositioned', 'AnimatedRotation', 'AnimatedScale',
+  'AnimatedSize', 'AnimatedSwitcher', 'AnimatedWidget', 'Animation',
+  'AnimationController', 'AppBar', 'ArgumentError', 'AspectRatio',
+  'AssertionError', 'AssetImage', 'Autocomplete', 'Border',
+  'BorderRadius', 'BorderSide', 'BottomAppBar', 'BottomNavigationBar',
+  'BottomSheet', 'BouncingScrollPhysics', 'BoxConstraints', 'BoxDecoration',
+  'BoxShadow','build','BuildContext', 'Button', 'ButtonBar',
+  'ButtonStyle', 'Canvas', 'Card', 'Center',
+  'ChangeNotifier', 'ChangeNotifierProvider', 'Checkbox', 'CheckboxListTile',
+  'Chip', 'ChipTheme', 'ChoiceChip', 'CircleAvatar',
+  'CircularProgressIndicator', 'ClampingScrollPhysics', 'ClipOval', 'ClipPath',
+  'ClipRRect', 'ClipRect', 'Color', 'ColorScheme',
+  'ColorSwatch', 'Colors', 'Column', 'ConstrainedBox',
+  'Container', 'CupertinoActionSheet', 'CupertinoActivityIndicator', 'CupertinoAlertDialog',
+  'CupertinoApp', 'CupertinoButton', 'CupertinoDatePicker', 'CupertinoDialog',
+  'CupertinoPageRoute', 'CupertinoPageScaffold', 'CupertinoSlider', 'CupertinoSwitch',
+  'CupertinoTabBar', 'CupertinoTabScaffold', 'CupertinoTextField', 'CupertinoTimerPicker',
+  'Curve', 'Curves', 'CustomClipper', 'CustomMultiChildLayout',
+  'CustomPaint', 'CustomPainter', 'CustomScrollView', 'CustomSingleChildLayout',
+  'DateTime', 'DecoratedBox', 'DecoratedBoxTransition', 'DefaultTabController',
+  'DefaultTextHeightBehavior', 'DefaultTextStyle', 'Dialog', 'Directory',
+  'Divider', 'DragTarget', 'Draggable', 'DraggableScrollableSheet',
+  'Drawer', 'DropdownButton', 'DropdownButtonFormField', 'Duration',
+  'EdgeInsets', 'EditableText', 'ElevatedButton', 'Enum',
+  'Error', 'ErrorWidget', 'Exception', 'Expanded',
+  'ExpansionPanel', 'ExpansionPanelList', 'ExpansionTile', 'FadeTransition',
+  'File', 'FileImage', 'FileSystemEntity', 'FilterChip',
+  'FittedBox', 'FlatButton', 'Flexible', 'FlexibleSpace',
+  'FloatingActionButton', 'Flow', 'FlutterError', 'Focus',
+  'FocusNode', 'FocusScope', 'FontStyle', 'FontWeight',
+  'Form', 'FormField', 'FormState', 'FormatException',
+  'Function', 'Future', 'FutureBuilder', 'GestureDetector',
+  'GlobalKey', 'GradientTransform', 'GridView', 'Icon',
+  'IconButton', 'IgnorePointer', 'Image', 'ImageIcon',
+  'ImageProvider', 'InheritedModel', 'InheritedWidget', 'InkResponse',
+  'InkWell', 'InputChip', 'InputDecoration', 'Iterable',
+  'Key', 'LabeledGlobalKey', 'LayoutBuilder', 'LimitedBox',
+  'LinearGradient', 'LinearProgressIndicator', 'List', 'ListTile',
+  'ListTileTheme', 'ListView', 'Listener', 'LongPressDraggable',
+  'Map', 'Material', 'MaterialApp', 'MaterialBanner',
+  'MaterialButton', 'MaterialPageRoute', 'Matrix4', 'MediaQuery',
+  'MemoryImage', 'MenuAnchor', 'MenuItemButton', 'ModalRoute',
+  'MouseRegion', 'NavigationDrawer', 'NavigationRail', 'Navigator',
+  'NavigatorState', 'NetworkImage', 'NeverScrollableScrollPhysics', 'NoSuchMethodError',
+  'NotificationListener', 'Object', 'ObjectKey', 'Offset',
+  'Offstage', 'Opacity', 'OrientationBuilder', 'OutlineInputBorder',
+  'OutlinedButton', 'Padding', 'PageController', 'PageRoute',
+  'PageRouteBuilder', 'PageStorageKey', 'Paint', 'Path',
+  'Placeholder', 'Point', 'PopupMenuButton', 'PopupRoute',
+  'Positioned', 'PositionedTransition', 'ProgressIndicator', 'Provider',
+  'ProxyWidget', 'RRect', 'RadialGradient', 'Radio',
+  'RadioListTile', 'Radius', 'RaisedButton', 'Random',
+  'RangeError', 'RangeSlider', 'RawMaterialButton', 'Rect',
+  'RenderObjectWidget', 'ReverseAnimation', 'RichText', 'RotationTransition',
+  'RoundedRectangleBorder', 'Route', 'RouteSettings', 'Row',
+  'SafeArea', 'Scaffold', 'ScaleTransition', 'ScrollController',
+  'ScrollPhysics', 'SegmentedButton', 'SelectableText', 'Semantics',
+  'Set', 'Shader', 'ShapeDecoration', 'SimpleDialog',
+  'SingleChildScrollView', 'Size', 'SizeTransition', 'SizedBox',
+  'SlideTransition', 'Slider', 'SliverAppBar', 'SliverFixedExtentList',
+  'SliverGrid', 'SliverList', 'SliverPersistentHeader', 'SliverToBoxAdapter',
+  'SnackBar', 'Spacer', 'Stack', 'State',
+  'StateError', 'StatefulWidget', 'StatelessWidget', 'Stepper',
+  'StopWatch', 'Stopwatch', 'Stream', 'StreamBuilder',
+  'String', 'SubmenuButton', 'Switch', 'SwitchListTile',
+  'TabBar', 'TabBarView', 'TabController', 'Text',
+  'TextAlign', 'TextButton', 'TextDirection', 'TextEditingController',
+  'TextField', 'TextFormField', 'TextSpan', 'TextStyle',
+  'TextTheme', 'ThemeData', 'TimeoutException', 'Timer',
+  'Tooltip', 'Transform', 'Tween', 'TweenAnimationBuilder',
+  'Type', 'UnimplementedError', 'UniqueKey', 'UnsupportedError',
+  'ValueKey', 'ValueListenableBuilder', 'ValueNotifier', 'ValueNotifierProvider',
+  'Vector3', 'VerticalDivider', 'Visibility', 'Widget',
+  'Wrap', 'bool', 'double', 'int',
 };

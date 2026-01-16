@@ -54,7 +54,7 @@ mixin PentominoGameMixin {
 
     // Coordonnées normalisées dans l'ordre STABLE des cellules (positions)
     List<Point> coordsInPositionOrder(int posIdx) {
-      final cellNums = piece.positions[posIdx];
+      final cellNums = piece.orientations[posIdx];
 
       final raw = cellNums.map((cellNum) {
         final x = (cellNum - 1) % 5;
@@ -88,7 +88,7 @@ mixin PentominoGameMixin {
     int positionIndex,
     Point normalizedMastercase,
   ) {
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
     final coords = position.map((cellNum) {
       final x = (cellNum - 1) % 5;
       final y = (cellNum - 1) ~/ 5;
@@ -118,7 +118,7 @@ mixin PentominoGameMixin {
   /// 
   /// Cette méthode est IDENTIQUE dans Pentoscope et peut être utilisée dans Classical.
   Point? calculateDefaultCell(Pento piece, int positionIndex) {
-    final position = piece.positions[positionIndex];
+    final position = piece.orientations[positionIndex];
     if (position.isEmpty) return null;
 
     int minX = 5, minY = 5;

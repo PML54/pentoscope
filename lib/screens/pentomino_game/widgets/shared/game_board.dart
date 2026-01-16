@@ -186,7 +186,7 @@ class GameBoard extends ConsumerWidget {
     // Chercher dans toutes les pièces placées
     for (final placedPiece in state.placedPieces) {
       if (placedPiece.piece.id == pieceId) {
-        final position = placedPiece.piece.positions[placedPiece.positionIndex];
+        final position = placedPiece.piece.orientations[placedPiece.positionIndex];
         for (final cellNum in position) {
           final localX = (cellNum - 1) % 5;
           final localY = (cellNum - 1) ~/ 5;
@@ -246,7 +246,7 @@ class GameBoard extends ConsumerWidget {
     if (state.selectedPlacedPiece != null) {
       final selectedPiece = state.selectedPlacedPiece!;
       final position =
-      selectedPiece.piece.positions[state.selectedPositionIndex];
+      selectedPiece.piece.orientations[state.selectedPositionIndex];
 
       for (final cellNum in position) {
         final localX = (cellNum - 1) % 5;
@@ -291,7 +291,7 @@ class GameBoard extends ConsumerWidget {
         state.previewX != null &&
         state.previewY != null) {
       final piece = state.selectedPiece!;
-      final position = piece.positions[state.selectedPositionIndex];
+      final position = piece.orientations[state.selectedPositionIndex];
 
       for (final cellNum in position) {
         final localX = (cellNum - 1) % 5;

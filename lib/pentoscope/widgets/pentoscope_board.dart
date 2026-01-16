@@ -359,7 +359,7 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
       // Chercher position locale pour comparer
       final selectedPiece = state.selectedPlacedPiece!;
       final position =
-      selectedPiece.piece.positions[state.selectedPositionIndex];
+      selectedPiece.piece.orientations[state.selectedPositionIndex];
       final minOffset = _getMinOffset(position);
 
       for (final cellNum in position) {
@@ -591,7 +591,7 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
     }
 
     final piece = state.selectedPiece!;
-    final position = piece.positions[state.selectedPositionIndex];
+    final position = piece.orientations[state.selectedPositionIndex];
     final minOffset = _getMinOffset(position);
 
     for (final cellNum in position) {
@@ -651,7 +651,7 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
     }
 
     final selectedPiece = state.selectedPlacedPiece!;
-    final position = selectedPiece.piece.positions[state.selectedPositionIndex];
+    final position = selectedPiece.piece.orientations[state.selectedPositionIndex];
     final minOffset = _getMinOffset(position);
 
     for (final cellNum in position) {
@@ -721,7 +721,7 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
       bool isLandscape,
       ) {
     if (isLandscape) {
-      return (positionIndex - 1 + piece.numPositions) % piece.numPositions;
+      return (positionIndex - 1 + piece.numOrientations) % piece.numOrientations;
     }
     return positionIndex;
   }
@@ -748,7 +748,7 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
 
     for (final placement in state.currentSolution!) {
       final piece = pentominos.firstWhere((p) => p.id == placement.pieceId);
-      final position = piece.positions[placement.positionIndex];
+      final position = piece.orientations[placement.positionIndex];
 
       // Calculer le minOffset pour normalisation
       int minLocalX = 5, minLocalY = 5;

@@ -20,7 +20,7 @@ class GamePiece {
   });
 
   List<int> get currentShape {
-    return pento.positions[currentOrientation];
+    return pento.orientations[currentOrientation];
   }
 
   static List<Point> shapeToCoordinates(List<int> shape) {
@@ -47,7 +47,7 @@ class GamePiece {
   GamePiece rotate() {
     return GamePiece(
       pento: pento,
-      currentOrientation: (currentOrientation + 1) % pento.numPositions,
+      currentOrientation: (currentOrientation + 1) % pento.numOrientations,
       isPlaced: isPlaced,
       placedX: placedX,
       placedY: placedY,

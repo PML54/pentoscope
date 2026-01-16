@@ -44,7 +44,7 @@ ShapeMatch? recognizeShape(List<List<int>> coords) {
 
   // Chercher dans toutes les pièces
   for (final pento in pentominos) {
-    for (int posIdx = 0; posIdx < pento.numPositions; posIdx++) {
+    for (int posIdx = 0; posIdx < pento.numOrientations; posIdx++) {
       final candidateCoords = pento.cartesianCoords[posIdx];
 
       if (_coordsEqual(normalized, candidateCoords)) {
