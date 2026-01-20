@@ -5,7 +5,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pentapol/common/pentominos.dart';
@@ -758,14 +757,9 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     int anchorY = gridY;
 
     if (state.selectedCellInPiece != null) {
-      // ✅ Convertir coordonnées normalisées → brutes pour calculer l'ancre
-      final rawMastercase = _getRawMastercaseCoords(
-        piece,
-        positionIndex,
-        state.selectedCellInPiece!,
-      );
-      anchorX = gridX - rawMastercase.x;
-      anchorY = gridY - rawMastercase.y;
+      // ✅ Ancre calculée avec les coordonnées normalisées (mastercase)
+      anchorX = gridX - state.selectedCellInPiece!.x;
+      anchorY = gridY - state.selectedCellInPiece!.y;
     }
 
     if (!state.canPlacePiece(piece, positionIndex, anchorX, anchorY)) {
@@ -876,14 +870,9 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       int previewY = gridY;
 
       if (state.selectedCellInPiece != null) {
-        // ✅ Convertir coordonnées normalisées → brutes pour calculer l'ancre
-        final rawMastercase = _getRawMastercaseCoords(
-          state.selectedPiece!,
-          state.selectedPositionIndex,
-          state.selectedCellInPiece!,
-        );
-        previewX -= rawMastercase.x;
-        previewY -= rawMastercase.y;
+        // ✅ Ancre calculée avec les coordonnées normalisées (mastercase)
+        previewX -= state.selectedCellInPiece!.x;
+        previewY -= state.selectedCellInPiece!.y;
       }
 
       state = state.copyWith(
@@ -962,6 +951,34 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     bool neededRecentering = false;
 
     if (state.selectedCellInPiece != null) {
+      // === LOG AVANT TRANSFO ===
+      final originalPosition = sp.piece.orientations[oldIdx];
+      final originalRawCoords = originalPosition.map((cellNum) {
+        final x = (cellNum - 1) % 5;
+        final y = (cellNum - 1) ~/ 5;
+        return Point(x, y);
+      }).toList();
+      final minXOrig = originalRawCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+      final minYOrig = originalRawCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+      final normalizedOrigCoords = originalRawCoords
+          .map((p) => Point(p.x - minXOrig, p.y - minYOrig))
+          .toList();
+      final masterIdxOrig = normalizedOrigCoords.indexWhere(
+        (p) => p.x == state.selectedCellInPiece!.x && p.y == state.selectedCellInPiece!.y,
+      );
+      final masterRawOrig = masterIdxOrig == -1
+          ? null
+          : originalRawCoords[masterIdxOrig];
+      final masterAbsOrig = masterRawOrig == null
+          ? null
+          : Point(sp.gridX + masterRawOrig.x, sp.gridY + masterRawOrig.y);
+      debugPrint(
+        '🧩 BEFORE: grid=(${sp.gridX},${sp.gridY}) '
+        'masterNorm=(${state.selectedCellInPiece!.x},${state.selectedCellInPiece!.y}) '
+        'masterRaw=${masterRawOrig == null ? "null" : "(${masterRawOrig.x},${masterRawOrig.y})"} '
+        'masterAbs=${masterAbsOrig == null ? "null" : "(${masterAbsOrig.x},${masterAbsOrig.y})"}',
+      );
+
       // Calculer la position pour maintenir la mastercase fixe
       final fixedPosition = _calculatePositionForFixedMastercase(
         originalPiece: sp,
@@ -1124,10 +1141,10 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     // Calculer la nouvelle position relative de la mastercase dans la pièce transformée
     Point? newSelectedCellInPiece;
     if (state.selectedCellInPiece != null) {
-      // Utiliser la même logique que _calculatePositionForFixedMastercase pour trouver la nouvelle position relative
+      // Utiliser l'index STABLE (ordre géométrique) pour remapper la mastercase
       final originalPosition = sp.piece.orientations[oldIdx];
       final transformedPosition = piece.orientations[newIdx];
-      
+
       final originalCoords = originalPosition.map((cellNum) {
         final x = (cellNum - 1) % 5;
         final y = (cellNum - 1) ~/ 5;
@@ -1136,26 +1153,28 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
 
       final minXOrig = originalCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
       final minYOrig = originalCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
-      final normalizedOrigCoords = originalCoords.map((p) => Point(p.x - minXOrig, p.y - minYOrig)).toList();
+      final normalizedOrigCoords = originalCoords
+          .map((p) => Point(p.x - minXOrig, p.y - minYOrig))
+          .toList();
 
-      final mastercaseIndex = normalizedOrigCoords.indexWhere((p) => p.x == state.selectedCellInPiece!.x && p.y == state.selectedCellInPiece!.y);
+      final mastercaseIndex = normalizedOrigCoords.indexWhere(
+        (p) => p.x == state.selectedCellInPiece!.x && p.y == state.selectedCellInPiece!.y,
+      );
+
       if (mastercaseIndex != -1) {
-        final mastercaseCellNum = originalPosition[mastercaseIndex];
-        final cellIndexInTransformed = transformedPosition.indexOf(mastercaseCellNum);
-        
-        if (cellIndexInTransformed != -1) {
-          final transformedCoords = transformedPosition.map((cellNum) {
-            final x = (cellNum - 1) % 5;
-            final y = (cellNum - 1) ~/ 5;
-            return Point(x, y);
-          }).toList();
+        final transformedCoords = transformedPosition.map((cellNum) {
+          final x = (cellNum - 1) % 5;
+          final y = (cellNum - 1) ~/ 5;
+          return Point(x, y);
+        }).toList();
 
-          final minXTrans = transformedCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
-          final minYTrans = transformedCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
-          final normalizedTransCoords = transformedCoords.map((p) => Point(p.x - minXTrans, p.y - minYTrans)).toList();
+        final minXTrans = transformedCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+        final minYTrans = transformedCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+        final normalizedTransCoords = transformedCoords
+            .map((p) => Point(p.x - minXTrans, p.y - minYTrans))
+            .toList();
 
-          newSelectedCellInPiece = normalizedTransCoords[cellIndexInTransformed];
-        }
+        newSelectedCellInPiece = normalizedTransCoords[mastercaseIndex];
       }
     }
 
@@ -1175,6 +1194,36 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       hasPossibleSolution: hasPossibleSolution, // 💡 Mise à jour!
     );
 
+    // === LOG APRES TRANSFO ===
+    if (state.selectedCellInPiece != null) {
+      final transformedPosition = piece.orientations[newIdx];
+      final transformedRawCoords = transformedPosition.map((cellNum) {
+        final x = (cellNum - 1) % 5;
+        final y = (cellNum - 1) ~/ 5;
+        return Point(x, y);
+      }).toList();
+      final minXTrans = transformedRawCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+      final minYTrans = transformedRawCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+      final normalizedTransCoords = transformedRawCoords
+          .map((p) => Point(p.x - minXTrans, p.y - minYTrans))
+          .toList();
+      final masterIdxTrans = normalizedTransCoords.indexWhere(
+        (p) => p.x == state.selectedCellInPiece!.x && p.y == state.selectedCellInPiece!.y,
+      );
+      final masterRawTrans = masterIdxTrans == -1
+          ? null
+          : transformedRawCoords[masterIdxTrans];
+      final masterAbsTrans = masterRawTrans == null
+          ? null
+          : Point(finalPiece.gridX + masterRawTrans.x, finalPiece.gridY + masterRawTrans.y);
+      debugPrint(
+        '🧩 AFTER: grid=(${finalPiece.gridX},${finalPiece.gridY}) '
+        'masterNorm=(${state.selectedCellInPiece!.x},${state.selectedCellInPiece!.y}) '
+        'masterRaw=${masterRawTrans == null ? "null" : "(${masterRawTrans.x},${masterRawTrans.y})"} '
+        'masterAbs=${masterAbsTrans == null ? "null" : "(${masterAbsTrans.x},${masterAbsTrans.y})"}',
+      );
+    }
+
     return neededRecentering ? TransformationResult.recentered : TransformationResult.success;
   }
 
@@ -1184,8 +1233,13 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     required PentoscopePlacedPiece transformedPiece,
     required Point mastercase,
   }) {
-    // 1. Trouver le numéro de cellule correspondant à la mastercase dans la position originale
-    // On utilise la même logique que _remapSelectedCell pour obtenir les coordonnées normalisées
+    debugPrint(
+      '🧮 CALC: origGrid=(${originalPiece.gridX},${originalPiece.gridY}) '
+      'masterNorm=(${mastercase.x},${mastercase.y}) '
+      'oldIdx=${originalPiece.positionIndex} newIdx=${transformedPiece.positionIndex}',
+    );
+    // 1. Trouver l'index STABLE (ordre géométrique) de la mastercase
+    // On ne peut pas utiliser le cellNum (il change selon l'orientation).
     final originalPosition = originalPiece.piece.orientations[originalPiece.positionIndex];
     final originalCoords = originalPosition.map((cellNum) {
       final x = (cellNum - 1) % 5;
@@ -1198,50 +1252,42 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     final normalizedOrigCoords = originalCoords.map((p) => Point(p.x - minXOrig, p.y - minYOrig)).toList();
 
     // Trouver l'index de la mastercase dans les coordonnées normalisées
-    final mastercaseIndex = normalizedOrigCoords.indexWhere((p) => p.x == mastercase.x && p.y == mastercase.y);
+    final mastercaseIndex = normalizedOrigCoords.indexWhere(
+      (p) => p.x == mastercase.x && p.y == mastercase.y,
+    );
     if (mastercaseIndex == -1) {
       debugPrint('Warning: Mastercase not found in original position, keeping original position');
       return Point(originalPiece.gridX, originalPiece.gridY);
     }
 
-    // 2. Obtenir le numéro de cellule correspondant
-    final mastercaseCellNum = originalPosition[mastercaseIndex];
-
-    // 3. Trouver où cette cellule se trouve dans la nouvelle orientation
+    // 2. Calculer les coordonnées normalisées dans la nouvelle orientation
+    // et réutiliser le même index (ordre stable)
     final transformedPosition = transformedPiece.piece.orientations[transformedPiece.positionIndex];
-    final cellIndexInTransformed = transformedPosition.indexOf(mastercaseCellNum);
-
-    if (cellIndexInTransformed == -1) {
-      // La cellule mastercase n'existe plus dans la nouvelle orientation
-      debugPrint('Warning: Mastercase cell $mastercaseCellNum disappeared after transformation, keeping original position');
-      return Point(originalPiece.gridX, originalPiece.gridY);
-    }
-
-    // 4. Calculer les coordonnées normalisées dans la nouvelle orientation
     final transformedCoords = transformedPosition.map((cellNum) {
       final x = (cellNum - 1) % 5;
       final y = (cellNum - 1) ~/ 5;
       return Point(x, y);
     }).toList();
 
-    final minXTrans = transformedCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
-    final minYTrans = transformedCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
-    final normalizedTransCoords = transformedCoords.map((p) => Point(p.x - minXTrans, p.y - minYTrans)).toList();
+    // 4. Position absolue actuelle de la mastercase (coord brute d'origine)
+    final originalMasterRaw = originalCoords[mastercaseIndex];
+    final mastercaseAbsX = originalPiece.gridX + originalMasterRaw.x;
+    final mastercaseAbsY = originalPiece.gridY + originalMasterRaw.y;
 
-    // 5. La nouvelle position relative normalisée de la mastercase
-    final newMastercaseLocal = normalizedTransCoords[cellIndexInTransformed];
-
-    // 6. Position absolue actuelle de la mastercase
-    final mastercaseAbsX = originalPiece.gridX + mastercase.x;
-    final mastercaseAbsY = originalPiece.gridY + mastercase.y;
-
-    // 7. Calculer gridX, gridY pour que la mastercase reste à la position absolue
-    // La cellule physique dans la grille 5x5 brute est à (minXTrans + newMastercaseLocal.x, minYTrans + newMastercaseLocal.y)
-    final newLocalX = minXTrans + newMastercaseLocal.x;
-    final newLocalY = minYTrans + newMastercaseLocal.y;
+    // 5. Calculer gridX, gridY pour que la mastercase reste à la position absolue
+    // La cellule brute de la mastercase en orientation transformée est celle au même index
+    final newLocalX = transformedCoords[mastercaseIndex].x;
+    final newLocalY = transformedCoords[mastercaseIndex].y;
 
     final newGridX = mastercaseAbsX - newLocalX;
     final newGridY = mastercaseAbsY - newLocalY;
+
+    debugPrint(
+      '🧮 CALC: masterIdx=$mastercaseIndex '
+      'origRaw=(${originalMasterRaw.x},${originalMasterRaw.y}) '
+      'newRaw=($newLocalX,$newLocalY) '
+      'newGrid=($newGridX,$newGridY)',
+    );
 
     return Point(newGridX, newGridY);
   }
@@ -1253,13 +1299,6 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     return calculateDefaultCell(piece, positionIndex);
   }
 
-  /// Convertit les coordonnées normalisées de la mastercase en coordonnées brutes
-  /// pour la position actuelle de la pièce (grille 5×5)
-  /// 
-  /// ✅ Utilise maintenant la méthode du mixin (via super pour éviter le conflit de nom)
-  Point _getRawMastercaseCoords(Pento piece, int positionIndex, Point normalizedMastercase) {
-    return super.getRawMastercaseCoords(piece, positionIndex, normalizedMastercase);
-  }
 
   /// Annule le mode "pièce placée en main" (sélection sur plateau) en
   /// reconstruisant le plateau complet à partir des pièces placées.
@@ -1326,22 +1365,32 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       }
     }
 
-    // Trouver la cellule de la mastercase dans la pièce transformée (même logique que _calculatePositionForFixedMastercase)
-    final mastercaseCellNum = mastercaseLocal.y * 5 + mastercaseLocal.x + 1;
+    // Trouver la cellule de la mastercase dans la pièce transformée
     final transformedPosition = piece.piece.orientations[piece.positionIndex];
-    
-    if (!transformedPosition.contains(mastercaseCellNum)) {
+    final rawCoords = transformedPosition.map((cellNum) {
+      final x = (cellNum - 1) % 5;
+      final y = (cellNum - 1) ~/ 5;
+      return Point(x, y);
+    }).toList();
+
+    final minX = rawCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+    final minY = rawCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+    final normalizedCoords = rawCoords
+        .map((p) => Point(p.x - minX, p.y - minY))
+        .toList();
+
+    final mastercaseIndex = normalizedCoords
+        .indexWhere((p) => p.x == mastercaseLocal.x && p.y == mastercaseLocal.y);
+    if (mastercaseIndex == -1) {
       // La mastercase n'existe pas dans cette orientation
       return null;
     }
 
-    // Calculer la position relative de la mastercase dans la pièce transformée
-    final newMastercaseLocalX = (mastercaseCellNum - 1) % 5;
-    final newMastercaseLocalY = (mastercaseCellNum - 1) ~/ 5;
+    final mastercaseRaw = rawCoords[mastercaseIndex];
 
     // Position initiale pour garder la mastercase fixe
-    final initialGridX = mastercaseAbs.x - newMastercaseLocalX;
-    final initialGridY = mastercaseAbs.y - newMastercaseLocalY;
+    final initialGridX = mastercaseAbs.x - mastercaseRaw.x;
+    final initialGridY = mastercaseAbs.y - mastercaseRaw.y;
 
     // Recherche en spirale autour de la position initiale
     for (int radius = 0; radius <= maxRadius; radius++) {
@@ -1412,38 +1461,8 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     if (state.validPlacements.isEmpty) return null;
     if (state.selectedPiece == null) return null;
 
-    final piece = state.selectedPiece!;
-    final positionIndex = state.selectedPositionIndex;
-    
-    // Déterminer l'offset normalisé de la mastercase (ou première cellule si pas de mastercase)
-    Point mastercaseOffset;
-    if (state.selectedCellInPiece != null) {
-      // Convertir coordonnées normalisées → brutes, puis calculer offset normalisé
-      final rawMastercase = _getRawMastercaseCoords(
-        piece,
-        positionIndex,
-        state.selectedCellInPiece!,
-      );
-      
-      // Calculer les offsets normalisés pour trouver l'offset de la mastercase
-      final position = piece.orientations[positionIndex];
-      int normMinX = 5, normMinY = 5;
-      for (final cellNum in position) {
-        final x = (cellNum - 1) % 5;
-        final y = (cellNum - 1) ~/ 5;
-        if (x < normMinX) normMinX = x;
-        if (y < normMinY) normMinY = y;
-      }
-      
-      // Trouver l'offset normalisé de la mastercase
-      mastercaseOffset = Point(
-        rawMastercase.x - normMinX,
-        rawMastercase.y - normMinY,
-      );
-    } else {
-      // Pas de mastercase : utiliser la première cellule (offset 0,0)
-      mastercaseOffset = Point(0, 0);
-    }
+    // Déterminer l'offset normalisé de la mastercase (ou 0,0 si pas définie)
+    final mastercaseOffset = state.selectedCellInPiece ?? Point(0, 0);
 
     // Chercher le placement valide où la mastercase est la plus proche du doigt
     Point closest = state.validPlacements[0];

@@ -189,21 +189,13 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
 
             // ✨ BUGFIX: tryPlacePiece() s'attend à la position du DOIGT, pas l'ancre
             // previewX/Y sont l'ancre snappée
-            // Donc reconstruire: doigt = ancre + mastercase (coordonnées brutes)
+            // Donc reconstruire: doigt = ancre + mastercase (coordonnées normalisées)
             int reconstructedDragX = state.previewX!;
             int reconstructedDragY = state.previewY!;
 
             if (state.selectedCellInPiece != null) {
-              // ✅ Utiliser les coordonnées brutes de la mastercase
-              final rawMastercase = notifier.getRawMastercaseCoordsPublic();
-              if (rawMastercase != null) {
-                reconstructedDragX += rawMastercase.x;
-                reconstructedDragY += rawMastercase.y;
-              } else {
-                // Fallback : utiliser les coordonnées normalisées (ne devrait pas arriver)
-                reconstructedDragX += state.selectedCellInPiece!.x;
-                reconstructedDragY += state.selectedCellInPiece!.y;
-              }
+              reconstructedDragX += state.selectedCellInPiece!.x;
+              reconstructedDragY += state.selectedCellInPiece!.y;
             }
 
             final success = notifier.tryPlacePiece(reconstructedDragX, reconstructedDragY);
