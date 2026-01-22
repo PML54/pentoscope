@@ -108,31 +108,30 @@ class GameBoard extends ConsumerWidget {
                   notifier.clearPreview();
                 },
                 onAcceptWithDetails: (details) {
-                  final offset = (context.findRenderObject() as RenderBox?)
-                      ?.globalToLocal(details.offset);
+                  // Utiliser la position snappée si disponible.
+                  if (state.previewX == null || state.previewY == null) {
+                    notifier.clearPreview();
+                    return;
+                  }
 
-                  if (offset != null) {
-                    final visualX =
-                    (offset.dx / cellSize).floor().clamp(0, visualCols - 1);
-                    final visualY =
-                    (offset.dy / cellSize).floor().clamp(0, visualRows - 1);
+                  int reconstructedDragX = state.previewX!;
+                  int reconstructedDragY = state.previewY!;
 
-                    int logicalX, logicalY;
-                    if (isLandscape) {
-                      logicalX = (visualRows - 1) - visualY;
-                      logicalY = visualX;
-                    } else {
-                      logicalX = visualX;
-                      logicalY = visualY;
-                    }
+                  final rawMastercase = notifier.getRawMastercaseCoordsPublic();
+                  if (rawMastercase != null) {
+                    reconstructedDragX += rawMastercase.x;
+                    reconstructedDragY += rawMastercase.y;
+                  }
 
-                    final success = notifier.tryPlacePiece(logicalX, logicalY);
+                  final success = notifier.tryPlacePiece(
+                    reconstructedDragX,
+                    reconstructedDragY,
+                  );
 
-                    if (success) {
-                      HapticFeedback.mediumImpact();
-                    } else {
-                      HapticFeedback.heavyImpact();
-                    }
+                  if (success) {
+                    HapticFeedback.mediumImpact();
+                  } else {
+                    HapticFeedback.heavyImpact();
                   }
 
                   notifier.clearPreview();

@@ -14,6 +14,7 @@ import 'package:pentapol/common/plateau.dart';
 import 'package:pentapol/common/point.dart';
 import 'package:pentapol/common/shape_recognizer.dart';
 import 'package:pentapol/common/pentomino_game_mixin.dart';
+import 'package:pentapol/common/pentomino_symmetry_api.dart';
 import 'package:pentapol/services/plateau_solution_counter.dart' show PlateauSolutionCounter;
 import 'package:pentapol/services/solution_matcher.dart' show SolutionInfo;
 import 'package:pentapol/providers/settings_provider.dart' show settingsDatabaseProvider;
@@ -49,6 +50,12 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
   @override
   bool canPlacePiece(Pento piece, int positionIndex, int gridX, int gridY) {
     return state.canPlacePiece(piece, positionIndex, gridX, gridY);
+  }
+
+  /// Méthode publique pour obtenir les coordonnées brutes de la mastercase.
+  /// En mode classical, selectedCellInPiece est déjà en coordonnées brutes (5x5).
+  Point? getRawMastercaseCoordsPublic() {
+    return state.selectedCellInPiece;
   }
 
   Timer? _gameTimer;  // ✨ NOUVEAU
@@ -100,7 +107,9 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     // Pour les pièces placées, appliquer la symétrie relative à la mastercase si définie
     if (state.selectedPlacedPiece != null) {
       if (state.selectedCellInPiece != null) {
-        _applySymmetryWithMastercase(isHorizontal: true);
+        final useHorizontal =
+            state.viewOrientation == ViewOrientation.landscape ? false : true;
+        _applySymmetryWithMastercase(isHorizontal: useHorizontal);
       } else {
         // Comportement classique si pas de mastercase
         _applySymmetryToPlacedPiece(isHorizontal: true);
@@ -125,7 +134,9 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     // Pour les pièces placées, appliquer la symétrie relative à la mastercase si définie
     if (state.selectedPlacedPiece != null) {
       if (state.selectedCellInPiece != null) {
-        _applySymmetryWithMastercase(isHorizontal: false);
+        final useHorizontal =
+            state.viewOrientation == ViewOrientation.landscape ? true : false;
+        _applySymmetryWithMastercase(isHorizontal: useHorizontal);
       } else {
         // Comportement classique si pas de mastercase
         _applySymmetryToPlacedPiece(isHorizontal: false);
@@ -1642,15 +1653,52 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     final currentIndex = placedPiece.positionIndex;
     final mastercase = state.selectedCellInPiece!;
 
-    // Appliquer la symétrie relative à la mastercase
-    final newIndex = isHorizontal
-        ? piece.symmetryHRelativeToMastercase(currentIndex, mastercase)
-        : piece.symmetryVRelativeToMastercase(currentIndex, mastercase);
+    final masterAbs = Point(
+      placedPiece.gridX + mastercase.x,
+      placedPiece.gridY + mastercase.y,
+    );
 
-    if (newIndex == currentIndex) return; // Pas de changement
+    final position = piece.orientations[currentIndex];
+    final cellsAbs = position.map((cellNum) {
+      final localX = (cellNum - 1) % 5;
+      final localY = (cellNum - 1) ~/ 5;
+      return Point(placedPiece.gridX + localX, placedPiece.gridY + localY);
+    }).toList();
 
-    // Créer la pièce avec la nouvelle orientation
-    final transformedPiece = placedPiece.copyWith(positionIndex: newIndex);
+    final symAbs = applySymmetryAbs(
+      cellsAbs: cellsAbs,
+      masterAbs: masterAbs,
+      type: isHorizontal ? SymmetryType.horizontal : SymmetryType.vertical,
+    );
+
+    final normalized = normalizeCoords(symAbs);
+    final newIndex = findOrientationIndexFromNormalized(
+      piece: piece,
+      normalizedCoords: normalized,
+    );
+
+    if (newIndex == null || newIndex == currentIndex) return;
+
+    final newPosition = piece.orientations[newIndex];
+    int minLocalX = 5, minLocalY = 5;
+    for (final cellNum in newPosition) {
+      final localX = (cellNum - 1) % 5;
+      final localY = (cellNum - 1) ~/ 5;
+      if (localX < minLocalX) minLocalX = localX;
+      if (localY < minLocalY) minLocalY = localY;
+    }
+
+    final minAbsX = symAbs.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+    final minAbsY = symAbs.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+
+    final newGridX = minAbsX - minLocalX;
+    final newGridY = minAbsY - minLocalY;
+
+    final transformedPiece = placedPiece.copyWith(
+      positionIndex: newIndex,
+      gridX: newGridX,
+      gridY: newGridY,
+    );
 
     // Recalculer les solutions possibles
     final solutionsCount = _computeSolutionsWithTransformedPiece(transformedPiece);
@@ -1660,6 +1708,13 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     state = state.copyWith(
       selectedPlacedPiece: transformedPiece,
       selectedPositionIndex: newIndex,
+      selectedCellInPiece: _computeMastercaseForAbs(
+        piece: piece,
+        positionIndex: newIndex,
+        gridX: newGridX,
+        gridY: newGridY,
+        masterAbs: masterAbs,
+      ),
       solutionsCount: solutionsCount,
     );
     _recomputeBoardValidity();
@@ -1701,6 +1756,77 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
 
     final piece = placedPiece.piece;
     final currentIndex = placedPiece.positionIndex;
+    final mastercase = state.selectedCellInPiece;
+
+    if (mastercase != null) {
+      final masterAbs = Point(
+        placedPiece.gridX + mastercase.x,
+        placedPiece.gridY + mastercase.y,
+      );
+
+      final position = piece.orientations[currentIndex];
+      final cellsAbs = position.map((cellNum) {
+        final localX = (cellNum - 1) % 5;
+        final localY = (cellNum - 1) ~/ 5;
+        return Point(placedPiece.gridX + localX, placedPiece.gridY + localY);
+      }).toList();
+
+      final rotAbs = applyRotationAbs(
+        cellsAbs: cellsAbs,
+        masterAbs: masterAbs,
+        clockwise: isClockwise,
+      );
+
+      final normalized = normalizeCoords(rotAbs);
+      final newIndex = findOrientationIndexFromNormalized(
+        piece: piece,
+        normalizedCoords: normalized,
+      );
+
+      if (newIndex == null || newIndex == currentIndex) return;
+
+      final newPosition = piece.orientations[newIndex];
+      int minLocalX = 5, minLocalY = 5;
+      for (final cellNum in newPosition) {
+        final localX = (cellNum - 1) % 5;
+        final localY = (cellNum - 1) ~/ 5;
+        if (localX < minLocalX) minLocalX = localX;
+        if (localY < minLocalY) minLocalY = localY;
+      }
+
+      final minAbsX = rotAbs.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+      final minAbsY = rotAbs.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+
+      final newGridX = minAbsX - minLocalX;
+      final newGridY = minAbsY - minLocalY;
+
+      final transformedPiece = placedPiece.copyWith(
+        positionIndex: newIndex,
+        gridX: newGridX,
+        gridY: newGridY,
+      );
+
+      final solutionsCount =
+          _computeSolutionsWithTransformedPiece(transformedPiece);
+      print(
+        '[GAME] 🎯 Solutions possibles après rotation ${isClockwise ? 'horaire' : 'anti-horaire'} : $solutionsCount',
+      );
+
+      state = state.copyWith(
+        selectedPlacedPiece: transformedPiece,
+        selectedPositionIndex: newIndex,
+        selectedCellInPiece: _computeMastercaseForAbs(
+          piece: piece,
+          positionIndex: newIndex,
+          gridX: newGridX,
+          gridY: newGridY,
+          masterAbs: masterAbs,
+        ),
+        solutionsCount: solutionsCount,
+      );
+      _recomputeBoardValidity();
+      return;
+    }
 
     // Appliquer la rotation spécifique
     final newIndex = isClockwise ? piece.rotationCW(currentIndex) : piece.rotationTW(currentIndex);
@@ -1721,6 +1847,27 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
       solutionsCount: solutionsCount,
     );
     _recomputeBoardValidity();
+  }
+
+  Point? _computeMastercaseForAbs({
+    required Pento piece,
+    required int positionIndex,
+    required int gridX,
+    required int gridY,
+    required Point masterAbs,
+  }) {
+    final position = piece.orientations[positionIndex];
+    final expectedRaw = Point(masterAbs.x - gridX, masterAbs.y - gridY);
+
+    for (final cellNum in position) {
+      final localX = (cellNum - 1) % 5;
+      final localY = (cellNum - 1) ~/ 5;
+      if (localX == expectedRaw.x && localY == expectedRaw.y) {
+        return expectedRaw;
+      }
+    }
+
+    return null;
   }
 
   /// Met à jour l'état de la preview (évite les rebuilds inutiles)

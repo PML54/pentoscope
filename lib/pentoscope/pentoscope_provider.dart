@@ -11,6 +11,7 @@ import 'package:pentapol/common/pentominos.dart';
 import 'package:pentapol/common/plateau.dart';
 import 'package:pentapol/common/point.dart';
 import 'package:pentapol/common/pentomino_game_mixin.dart';
+import 'package:pentapol/common/pentomino_symmetry_api.dart';
 import 'package:pentapol/pentoscope/pentoscope_generator.dart';
 import 'package:pentapol/pentoscope/pentoscope_solver.dart'
     show Solution, PentoscopeSolver;
@@ -76,16 +77,28 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
 
   TransformationResult applyIsometrySymmetryH() {
     if (state.viewOrientation == ViewOrientation.landscape) {
+      if (state.selectedPlacedPiece != null && state.selectedCellInPiece != null) {
+        return _applySymmetryAbs(SymmetryType.vertical);
+      }
       return _applyIsoUsingLookup((p, idx) => p.symmetryV(idx));
     } else {
+      if (state.selectedPlacedPiece != null && state.selectedCellInPiece != null) {
+        return _applySymmetryAbs(SymmetryType.horizontal);
+      }
       return _applyIsoUsingLookup((p, idx) => p.symmetryH(idx));
     }
   }
 
   TransformationResult applyIsometrySymmetryV() {
     if (state.viewOrientation == ViewOrientation.landscape) {
+      if (state.selectedPlacedPiece != null && state.selectedCellInPiece != null) {
+        return _applySymmetryAbs(SymmetryType.horizontal);
+      }
       return _applyIsoUsingLookup((p, idx) => p.symmetryH(idx));
     } else {
+      if (state.selectedPlacedPiece != null && state.selectedCellInPiece != null) {
+        return _applySymmetryAbs(SymmetryType.vertical);
+      }
       return _applyIsoUsingLookup((p, idx) => p.symmetryV(idx));
     }
   }
@@ -418,7 +431,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       firstSolution = newPuzzle.solutions[0];
     }
 
-    // ⏱️ Reset et démarrer le timer
+    // ⏱️ Reset sans démarrer le timer
     stopTimer();
     
     state = PentoscopeState(
@@ -440,7 +453,6 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       elapsedSeconds: 0, // ⏱️ Reset timer
     );
     
-    startTimer();
   }
 
   // ==========================================================================
@@ -611,7 +623,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
         final pento = pentominos.firstWhere((p) => p.id == placement.pieceId);
         final initialPos = piecePositionIndices[placement.pieceId] ?? 0;
 
-        final minIso = pento.minIsometriesToReach(
+        pento.minIsometriesToReach(
           initialPos,
           placement.positionIndex,
         );
@@ -667,7 +679,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       piecePositionIndices[piece.id] = randomPos;
     }
 
-    // Reset timer
+    // Reset timer sans démarrer
     stopTimer();
     
     state = PentoscopeState(
@@ -687,13 +699,11 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       elapsedSeconds: 0,
     );
     
-    startTimer();
   }
 
   /// 🔄 Change la taille du plateau (redémarre avec un nouveau puzzle)
   Future<void> changeBoardSize(PentoscopeSize newSize) async {
     // Sauvegarder le temps actuel pour le niveau actuel
-    final currentTime = getElapsedSeconds();
 
     // Générer un nouveau puzzle avec la nouvelle taille
     await startPuzzle(
@@ -847,6 +857,11 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       validPlacements: [],
       hasPossibleSolution: hasPossibleSolution, // 💡 HINT
     );
+
+    // ⏱️ Démarrer le timer au premier placement depuis le slider
+    if (_gameTimer == null && state.selectedPlacedPiece == null) {
+      startTimer();
+    }
 
     return true;
   }
@@ -1225,6 +1240,239 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     }
 
     return neededRecentering ? TransformationResult.recentered : TransformationResult.success;
+  }
+
+  TransformationResult _applySymmetryAbs(SymmetryType type) {
+    final piece = state.selectedPiece;
+    final sp = state.selectedPlacedPiece;
+    if (piece == null || sp == null) return TransformationResult.success;
+    if (state.selectedCellInPiece == null) {
+      return TransformationResult.success;
+    }
+
+    final oldIdx = state.selectedPositionIndex;
+
+    final masterRaw = getRawMastercaseCoords(
+      piece,
+      oldIdx,
+      state.selectedCellInPiece!,
+    );
+    final masterAbs = Point(
+      sp.gridX + masterRaw.x,
+      sp.gridY + masterRaw.y,
+    );
+
+    final cellsAbs = sp.absoluteCells.toList();
+    debugPrint(
+      '🧩 SYM BEFORE: '
+      'piece=${piece.id} oldIdx=$oldIdx '
+      'grid=(${sp.gridX},${sp.gridY}) '
+      'masterAbs=(${masterAbs.x},${masterAbs.y}) '
+      'type=$type',
+    );
+    final symAbs = applySymmetryAbs(
+      cellsAbs: cellsAbs,
+      masterAbs: masterAbs,
+      type: type,
+    );
+
+    final normalized = normalizeCoords(symAbs);
+    debugPrint('🧮 SYM ABS: $symAbs');
+    debugPrint('🧮 SYM NORM: $normalized');
+    final newIdx = findOrientationIndexFromNormalized(
+      piece: piece,
+      normalizedCoords: normalized,
+    );
+
+    if (newIdx == null) {
+      debugPrint('❌ Symétrie impossible - orientation introuvable');
+      return TransformationResult.impossible;
+    }
+    debugPrint('✅ SYM ORIENTATION: $oldIdx → $newIdx');
+
+    final minX = symAbs.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+    final minY = symAbs.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+
+    final transformedPiece = sp.copyWith(positionIndex: newIdx);
+
+    int adjustedGridX = minX;
+    int adjustedGridY = minY;
+    debugPrint('🧮 SYM GRID INIT: ($adjustedGridX,$adjustedGridY)');
+    bool neededRecentering = false;
+
+    final initialPiece = transformedPiece.copyWith(
+      gridX: adjustedGridX,
+      gridY: adjustedGridY,
+    );
+
+    if (!_canPlacePieceWithoutChecker(initialPiece)) {
+      final nearestPosition = _findNearestValidPosition(
+        piece: transformedPiece,
+        mastercaseAbs: masterAbs,
+        mastercaseLocal: state.selectedCellInPiece!,
+      );
+
+      if (nearestPosition == null) {
+        debugPrint('❌ Symétrie impossible - aucune position valide trouvée');
+        return TransformationResult.impossible;
+      }
+
+      adjustedGridX = nearestPosition.x;
+      adjustedGridY = nearestPosition.y;
+      neededRecentering = true;
+    }
+
+    while (adjustedGridX < 0 ||
+        (adjustedGridX + _getMaxLocalX(transformedPiece) >=
+            state.plateau.width)) {
+      if (adjustedGridX > 0) {
+        adjustedGridX--;
+        neededRecentering = true;
+      } else {
+        final nearestPosition = _findNearestValidPosition(
+          piece: transformedPiece,
+          mastercaseAbs: masterAbs,
+          mastercaseLocal: state.selectedCellInPiece!,
+        );
+
+        if (nearestPosition == null) {
+          debugPrint('❌ Symétrie impossible - pièce sortirait du plateau');
+          return TransformationResult.impossible;
+        }
+
+        adjustedGridX = nearestPosition.x;
+        adjustedGridY = nearestPosition.y;
+        neededRecentering = true;
+        break;
+      }
+    }
+
+    while (adjustedGridY < 0 ||
+        (adjustedGridY + _getMaxLocalY(transformedPiece) >=
+            state.plateau.height)) {
+      if (adjustedGridY > 0) {
+        adjustedGridY--;
+        neededRecentering = true;
+      } else {
+        final nearestPosition = _findNearestValidPosition(
+          piece: transformedPiece,
+          mastercaseAbs: masterAbs,
+          mastercaseLocal: state.selectedCellInPiece!,
+        );
+
+        if (nearestPosition == null) {
+          debugPrint('❌ Symétrie impossible - pièce sortirait du plateau');
+          return TransformationResult.impossible;
+        }
+
+        adjustedGridX = nearestPosition.x;
+        adjustedGridY = nearestPosition.y;
+        neededRecentering = true;
+        break;
+      }
+    }
+
+    final finalPiece = transformedPiece.copyWith(
+      gridX: adjustedGridX,
+      gridY: adjustedGridY,
+    );
+
+    if (!_canPlacePieceWithoutChecker(finalPiece)) {
+      debugPrint('❌ Symétrie impossible - position finale invalide');
+      return TransformationResult.impossible;
+    }
+
+    final updatedPlacedPieces = state.placedPieces.map((p) {
+      if (p.piece.id == sp.piece.id) {
+        return finalPiece;
+      }
+      return p;
+    }).toList();
+
+    final newPlateau = Plateau.allVisible(
+      state.plateau.width,
+      state.plateau.height,
+    );
+    for (final p in updatedPlacedPieces) {
+      for (final cell in p.absoluteCells) {
+        newPlateau.setCell(cell.x, cell.y, p.piece.id);
+      }
+    }
+
+    final hasPossibleSolution = state.availablePieces.isNotEmpty
+        ? _checkHasPossibleSolutionWith(
+            newPlateau,
+            state.availablePieces,
+            updatedPlacedPieces,
+          )
+        : false;
+
+    Point? newSelectedCellInPiece;
+    if (state.selectedCellInPiece != null) {
+      final transformedPosition = piece.orientations[newIdx];
+      final transformedCoords = transformedPosition.map((cellNum) {
+        final x = (cellNum - 1) % 5;
+        final y = (cellNum - 1) ~/ 5;
+        return Point(x, y);
+      }).toList();
+
+      final minXTrans =
+          transformedCoords.map((p) => p.x).reduce((a, b) => a < b ? a : b);
+      final minYTrans =
+          transformedCoords.map((p) => p.y).reduce((a, b) => a < b ? a : b);
+      final normalizedTransCoords = transformedCoords
+          .map((p) => Point(p.x - minXTrans, p.y - minYTrans))
+          .toList();
+
+      final expectedRaw = Point(
+        masterAbs.x - finalPiece.gridX,
+        masterAbs.y - finalPiece.gridY,
+      );
+      final masterIdx = transformedCoords.indexWhere(
+        (p) => p.x == expectedRaw.x && p.y == expectedRaw.y,
+      );
+
+      if (masterIdx != -1) {
+        newSelectedCellInPiece = normalizedTransCoords[masterIdx];
+      } else {
+        debugPrint(
+          '⚠️ SYM mastercase raw not found in new orientation: '
+          'expected=(${expectedRaw.x},${expectedRaw.y})',
+        );
+      }
+    }
+
+    state = state.copyWith(
+      plateau: newPlateau,
+      selectedPlacedPiece: finalPiece,
+      placedPieces: updatedPlacedPieces,
+      selectedPositionIndex: newIdx,
+      selectedCellInPiece: newSelectedCellInPiece ??
+          _remapSelectedCell(
+            piece: piece,
+            oldIndex: oldIdx,
+            newIndex: newIdx,
+            oldCell: state.selectedCellInPiece,
+          ),
+      clearPreview: true,
+      isometryCount: state.isometryCount + 1,
+      hasPossibleSolution: hasPossibleSolution,
+    );
+
+    final finalMasterRaw = getRawMastercaseCoords(
+      piece,
+      newIdx,
+      state.selectedCellInPiece!,
+    );
+    debugPrint(
+      '🧩 SYM AFTER: '
+      'grid=(${finalPiece.gridX},${finalPiece.gridY}) '
+      'masterAbs=(${finalPiece.gridX + finalMasterRaw.x},${finalPiece.gridY + finalMasterRaw.y})',
+    );
+
+    return neededRecentering
+        ? TransformationResult.recentered
+        : TransformationResult.success;
   }
 
   /// Calcule la position gridX,gridY pour maintenir la mastercase fixe lors d'une transformation

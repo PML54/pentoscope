@@ -17,6 +17,34 @@ enum SymmetryType {
   vertical,
 }
 
+/// Applique une rotation en coordonnées ABSOLUES autour de la mastercase.
+///
+/// - [cellsAbs]: liste de cellules absolues (plateau).
+/// - [masterAbs]: mastercase absolue (centre de rotation).
+/// - [clockwise]: true = rotation horaire, false = anti-horaire.
+///
+/// Retourne les nouvelles coordonnées ABSOLUES (peuvent être négatives).
+List<Point> applyRotationAbs({
+  required List<Point> cellsAbs,
+  required Point masterAbs,
+  required bool clockwise,
+}) {
+  final xm = masterAbs.x;
+  final ym = masterAbs.y;
+
+  return cellsAbs.map((p) {
+    final dx = p.x - xm;
+    final dy = p.y - ym;
+    if (clockwise) {
+      // (x',y') = (xm + dy, ym - dx)
+      return Point(xm + dy, ym - dx);
+    } else {
+      // (x',y') = (xm - dy, ym + dx)
+      return Point(xm - dy, ym + dx);
+    }
+  }).toList();
+}
+
 /// Applique une symétrie en coordonnées ABSOLUES.
 ///
 /// - [cellsAbs]: liste de cellules absolues (plateau).
