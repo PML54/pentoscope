@@ -342,6 +342,11 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
     bool isSelected = selectedInfo.isSelected;
     bool isReferenceCell = false;
 
+    // Masquer les cellules de la pièce pendant le drag
+    if (state.isDragging && isSelected) {
+      return Container(color: Colors.grey.shade300);
+    }
+
     if (isSelected && selectedInfo.selectedColor != null) {
       cellColor = selectedInfo.selectedColor!;
     }
@@ -459,6 +464,8 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
       // Pièce sélectionnée: draggable
       cellWidget = Draggable<Pento>(
         data: state.selectedPiece!,
+        onDragStarted: () => notifier.setDragging(true),
+        onDragEnd: (_) => notifier.setDragging(false),
         feedback: Material(
           color: Colors.transparent,
           child: PieceRenderer(
@@ -472,7 +479,7 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
             getPieceColor: (pieceId) => settings.ui.getPieceColor(pieceId),
           ),
         ),
-        childWhenDragging: Opacity(opacity: 0.3, child: cellWidget),
+        childWhenDragging: Container(color: Colors.grey.shade300),
         child: GestureDetector(
           onTap: () {
             HapticFeedback.selectionClick();

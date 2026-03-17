@@ -340,6 +340,10 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     state = state.copyWith(clearPreview: true);
   }
 
+  void setDragging(bool value) {
+    state = state.copyWith(isDragging: value);
+  }
+
   void cycleToNextOrientation() {
     if (state.selectedPiece == null) return;
 
@@ -2032,6 +2036,7 @@ class PentoscopeState {
   final int deleteCount; // 🗑️ Nombre de suppressions de pièces
 
   final bool isSnapped;
+  final bool isDragging;
   final bool showSolution;
   final Solution? currentSolution;
 
@@ -2063,6 +2068,7 @@ class PentoscopeState {
     this.hintCount = 0,   // 💡
     this.deleteCount = 0, // 🗑️
     this.isSnapped = false,
+    this.isDragging = false,
     this.showSolution = false,
     this.currentSolution,
     this.hasPossibleSolution = true, // 💡 Par défaut true au démarrage
@@ -2135,6 +2141,7 @@ class PentoscopeState {
     int? hintCount,   // 💡
     int? deleteCount, // 🗑️
     bool? isSnapped,
+    bool? isDragging,
     bool? showSolution, // ✅ NOUVEAU
     Solution? currentSolution, // ✅ NOUVEAU
     bool? hasPossibleSolution, // 💡 HINT
@@ -2174,6 +2181,7 @@ class PentoscopeState {
       hintCount: hintCount ?? this.hintCount,
       deleteCount: deleteCount ?? this.deleteCount,
       isSnapped: isSnapped ?? this.isSnapped,
+      isDragging: isDragging ?? this.isDragging,
       showSolution: showSolution ?? this.showSolution,
       // ✅ NOUVEAU
       currentSolution: currentSolution ?? this.currentSolution, // ✅ NOUVEAU
