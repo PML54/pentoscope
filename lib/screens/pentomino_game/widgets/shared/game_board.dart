@@ -80,7 +80,9 @@ class GameBoard extends ConsumerWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: DragTarget<Pento>(
+              child: Stack(
+                children: [
+                  DragTarget<Pento>(
                 onWillAcceptWithDetails: (details) => true,
                 onMove: (details) {
                   final offset = (context.findRenderObject() as RenderBox?)
@@ -173,6 +175,10 @@ class GameBoard extends ConsumerWidget {
                   );
                 },
               ),
+                  if (state.selectedPlacedPiece != null && state.selectedPiece != null)
+                    _buildPieceOverlay(state, notifier, settings, cellSize, visualRows, isLandscape),
+                ],
+              ),
             ),
           ),
         );
@@ -238,7 +244,6 @@ class GameBoard extends ConsumerWidget {
     }
 
     bool isSelected = false;
-    bool isReferenceCell = false;
     bool isPreview = false;
     bool isSnappedPreview = false; // 🆕 Pour le snap
 
@@ -246,8 +251,6 @@ class GameBoard extends ConsumerWidget {
       final selectedPiece = state.selectedPlacedPiece!;
       final position =
       selectedPiece.piece.orientations[state.selectedPositionIndex];
-
-      // Normalisation identique à absoluteCells
       int minLocalX = 5, minLocalY = 5;
       for (final cellNum in position) {
         final lx = (cellNum - 1) % 5;
@@ -255,42 +258,20 @@ class GameBoard extends ConsumerWidget {
         if (lx < minLocalX) minLocalX = lx;
         if (ly < minLocalY) minLocalY = ly;
       }
-
       for (final cellNum in position) {
         final localX = (cellNum - 1) % 5 - minLocalX;
         final localY = (cellNum - 1) ~/ 5 - minLocalY;
-        final pieceX = selectedPiece.gridX + localX;
-        final pieceY = selectedPiece.gridY + localY;
-
-        if (pieceX == logicalX && pieceY == logicalY) {
+        if (selectedPiece.gridX + localX == logicalX &&
+            selectedPiece.gridY + localY == logicalY) {
           isSelected = true;
-
-          if (state.selectedCellInPiece != null) {
-            isReferenceCell = (localX == state.selectedCellInPiece!.x &&
-                localY == state.selectedCellInPiece!.y);
-          }
-
-          if (cellValue == 0) {
-            cellColor = settings.ui.getPieceColor(selectedPiece.piece.id);
-            cellText = selectedPiece.piece.id.toString();
-
-            // Ajouter la lettre en mode isométries
-            if (isIsometriesMode) {
-              cellText += selectedPiece.piece.getLetterForPosition(state.selectedPositionIndex, cellNum);
-            }
-
-            isOccupied = true;
-          } else if (cellValue == selectedPiece.piece.id) {
-            // La cellule est occupée par la pièce sélectionnée
-            // On met à jour le texte pour afficher les lettres en mode isométries
-            if (isIsometriesMode) {
-              cellText = selectedPiece.piece.id.toString();
-              cellText += selectedPiece.piece.getLetterForPosition(state.selectedPositionIndex, cellNum);
-            }
-          }
           break;
         }
       }
+    }
+
+    // Pièce sélectionnée : rendue via overlay, cellule grise sur la grille
+    if (isSelected) {
+      return Container(color: Colors.grey.shade300);
     }
 
     // Preview avec support du snap
@@ -338,9 +319,7 @@ class GameBoard extends ConsumerWidget {
 
     // Bordure avec support du snap
     Border border;
-    if (isReferenceCell) {
-      border = Border.all(color: Colors.red, width: 4);
-    } else if (isPreview) {
+    if (isPreview) {
       if (state.isPreviewValid) {
         if (isSnappedPreview) {
           // 🆕 Snap actif : bordure cyan/turquoise pour indiquer l'aimantation
@@ -352,11 +331,6 @@ class GameBoard extends ConsumerWidget {
       } else {
         border = Border.all(color: Colors.red, width: 3);
       }
-    } else if (isSelected) {
-      border = Border.all(
-        color: Colors.amber,
-        width: 3,
-      );
     } else {
       border = PieceBorderCalculator.calculate(
           logicalX, logicalY, state.plateau, isLandscape);
@@ -397,44 +371,14 @@ class GameBoard extends ConsumerWidget {
                 ? (isSnappedPreview ? Colors.cyan.shade900 : Colors.green.shade900) // 🆕
                 : Colors.red.shade900)
                 : Colors.white,
-            fontWeight: (isSelected || isPreview) ? FontWeight.w900 : FontWeight.bold,
-            fontSize: (isSelected || isPreview) ? 16 : 14,
+            fontWeight: isPreview ? FontWeight.w900 : FontWeight.bold,
+            fontSize: isPreview ? 16 : 14,
           ),
         ),
       ),
     );
 
-    if (isSelected && state.selectedPiece != null) {
-      final emptyCell = Container(color: Colors.grey.shade300);
-      cellWidget = Draggable<Pento>(
-        data: state.selectedPiece!,
-        onDragStarted: () => notifier.setDragging(true),
-        onDragEnd: (_) => notifier.setDragging(false),
-        feedback: Material(
-          color: Colors.transparent,
-          child: PieceRenderer(
-            piece: state.selectedPiece!,
-            positionIndex: state.selectedPositionIndex,
-            isDragging: true,
-            getPieceColor: (pieceId) => settings.ui.getPieceColor(pieceId),
-          ),
-        ),
-        childWhenDragging: emptyCell,
-        child: state.isDragging
-            ? emptyCell
-            : GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  notifier.selectPlacedPiece(state.selectedPlacedPiece!, logicalX, logicalY);
-                },
-                onDoubleTap: () {
-                  HapticFeedback.selectionClick();
-                  notifier.applyIsometryRotation();
-                },
-                child: cellWidget,
-              ),
-      );
-    } else if (isOccupied && !isSelected) {
+    if (isOccupied && !isSelected) {
       cellWidget = GestureDetector(
         onTap: () {
           final piece = notifier.getPlacedPieceAt(logicalX, logicalY);
@@ -455,5 +399,129 @@ class GameBoard extends ConsumerWidget {
     }
 
     return cellWidget;
+  }
+
+  /// Overlay unique pour la pièce sélectionnée sur le plateau.
+  /// Remplace les 5 Draggables individuels par un seul widget (comme le slider).
+  Widget _buildPieceOverlay(
+      state, notifier, settings, double cellSize, int visualRows, bool isLandscape) {
+    final placed = state.selectedPlacedPiece!;
+    final piece = state.selectedPiece!;
+    final positionIndex = state.selectedPositionIndex;
+    final position = piece.orientations[positionIndex];
+
+    // Normalisation
+    int minX = 5, minY = 5;
+    for (final cellNum in position) {
+      final lx = (cellNum - 1) % 5;
+      final ly = (cellNum - 1) ~/ 5;
+      if (lx < minX) minX = lx;
+      if (ly < minY) minY = ly;
+    }
+
+    // Coordonnées visuelles de chaque cellule
+    final cells = <({int visX, int visY, int localX, int localY, int cellNum})>[];
+    int minVisX = 999, minVisY = 999, maxVisX = 0, maxVisY = 0;
+    for (final cellNum in position) {
+      final localX = (cellNum - 1) % 5 - minX;
+      final localY = (cellNum - 1) ~/ 5 - minY;
+      final absX = placed.gridX + localX;
+      final absY = placed.gridY + localY;
+      final int visX, visY;
+      if (isLandscape) {
+        visX = absY;
+        visY = (visualRows - 1 - absX).toInt();
+      } else {
+        visX = absX;
+        visY = absY;
+      }
+      cells.add((visX: visX, visY: visY, localX: localX, localY: localY, cellNum: cellNum));
+      if (visX < minVisX) minVisX = visX;
+      if (visX > maxVisX) maxVisX = visX;
+      if (visY < minVisY) minVisY = visY;
+      if (visY > maxVisY) maxVisY = visY;
+    }
+
+    final overlayW = (maxVisX - minVisX + 1) * cellSize;
+    final overlayH = (maxVisY - minVisY + 1) * cellSize;
+    final displayIndex = isLandscape
+        ? (positionIndex - 1 + piece.numOrientations) % piece.numOrientations
+        : positionIndex;
+
+    return Positioned(
+      left: minVisX * cellSize,
+      top: minVisY * cellSize,
+      width: overlayW,
+      height: overlayH,
+      child: Draggable<Pento>(
+        data: piece,
+        feedback: Material(
+          color: Colors.transparent,
+          child: PieceRenderer(
+            piece: piece,
+            positionIndex: displayIndex,
+            isDragging: true,
+            getPieceColor: (id) => settings.ui.getPieceColor(id),
+          ),
+        ),
+        childWhenDragging: SizedBox(width: overlayW, height: overlayH),
+        child: Stack(
+          children: [
+            for (final cell in cells)
+              Positioned(
+                left: (cell.visX - minVisX) * cellSize,
+                top: (cell.visY - minVisY) * cellSize,
+                width: cellSize,
+                height: cellSize,
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    notifier.selectPlacedPiece(
+                        placed, placed.gridX + cell.localX, placed.gridY + cell.localY);
+                  },
+                  onDoubleTap: () {
+                    HapticFeedback.selectionClick();
+                    notifier.applyIsometryRotation();
+                  },
+                  child: _buildOverlayCell(
+                      cell.localX, cell.localY, cell.cellNum, piece, state, settings),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverlayCell(
+      int localX, int localY, int cellNum, piece, state, settings) {
+    final isRef = state.selectedCellInPiece != null &&
+        localX == state.selectedCellInPiece!.x &&
+        localY == state.selectedCellInPiece!.y;
+    final pieceColor = settings.ui.getPieceColor(piece.id);
+
+    String cellText = piece.id.toString();
+    if (state.isIsometriesMode) {
+      cellText += piece.getLetterForPosition(state.selectedPositionIndex, cellNum);
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: pieceColor,
+        border: isRef
+            ? Border.all(color: Colors.red, width: 4)
+            : Border.all(color: Colors.amber, width: 3),
+      ),
+      child: Center(
+        child: Text(
+          cellText,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
   }
 }
