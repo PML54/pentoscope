@@ -269,9 +269,12 @@ class GameBoard extends ConsumerWidget {
       }
     }
 
-    // Pièce sélectionnée : rendue via overlay, cellule grise sur la grille
+    // Pièce sélectionnée : rendue via overlay → cellule vide (le preview peut overrider)
     if (isSelected) {
-      return Container(color: Colors.grey.shade300);
+      cellColor = Colors.grey.shade300;
+      isOccupied = false;
+      cellText = '';
+      isSelected = false;
     }
 
     // Preview avec support du snap

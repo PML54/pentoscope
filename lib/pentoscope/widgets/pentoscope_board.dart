@@ -370,11 +370,12 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
     }
 
     // 4️⃣ DÉTECTER LA PREVIEW
+    // Pendant le drag, ne pas bloquer le preview sur les cellules sélectionnées
     final previewInfo = _detectPreview(
       state,
       logicalX,
       logicalY,
-      isSelected,
+      state.isDragging ? false : isSelected,
       settings,
     );
 
@@ -475,9 +476,9 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
             getPieceColor: (pieceId) => settings.ui.getPieceColor(pieceId),
           ),
         ),
-        childWhenDragging: emptyCell,
+        childWhenDragging: previewInfo.isPreview ? cellWidget : emptyCell,
         child: state.isDragging
-            ? emptyCell
+            ? (previewInfo.isPreview ? cellWidget : emptyCell)
             : GestureDetector(
                 onTap: () {
                   HapticFeedback.selectionClick();
