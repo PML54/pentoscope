@@ -1,88 +1,75 @@
-# CLAUDE.md
+# CLAUDE.md — Pentapol
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Identité du projet
 
-## Project
-
-Pentapol is a Flutter mobile game for pentomino puzzles. It supports two main game modes:
-- **Pentoscope** (Speed Mode): Place 3–6 random pieces on smaller boards
-- **Classical**: Complete 12-piece set on a 6×10 board (9356 known solutions)
-
-Code comments and commit messages are in French.
-
-## Commands
-
-```bash
-flutter pub get                       # Install dependencies
-flutter analyze                       # Lint (flutter_lints)
-flutter test                          # Run tests
-flutter run                           # Run on device/emulator
-dart run build_runner build           # Regenerate Drift + Freezed code
-flutter pub run flutter_launcher_icons:main  # Regenerate app icons
-```
+- **Nom** : Pentapol
+- **Package Flutter** : `pentapol`
+- **Langage** : Dart / Flutter
+- **Plateforme cible** : iOS (iPhone, App Store)
+- **Backend** : Cloudflare Workers + Durable Objects (mode multijoueur)
+- **State management** : Riverpod
+- **Imports** : absolus uniquement (pas de chemins relatifs)
 
 ## Architecture
 
-### State Management — Riverpod Notifiers
-
-Two large NotifierProviders drive the game:
-- `pentoscopeProvider` → `PentoscopeNotifier`/`PentoscopeState` (`lib/pentoscope/pentoscope_provider.dart`, ~76KB)
-- `pentominoGameProvider` → `PentominoGameNotifier`/`PentominoGameState` (`lib/classical/pentomino_game_provider.dart`, ~65KB)
-- `settingsProvider` → `SettingsNotifier`/`AppSettings` (`lib/providers/settings_provider.dart`)
-
-### Shared Logic — `PentominoGameMixin`
-
-`lib/common/pentomino_game_mixin.dart` is mixed into both game providers. It centralizes:
-- Isometric transformations (rotation CW/180°, mirror H/V)
-- Coordinate normalization and mastercase remapping
-- Cell selection and overlap validation
-
-### Solver — `PentoscopeSolver`
-
-`lib/pentoscope/pentoscope_solver.dart` implements an optimized backtracking solver:
-- **Smallest Free Cell First (SFCF)** heuristic
-- Isolated region pruning for early termination
-- Piece ordering by constraint (fewer orientations = tried first)
-- Returns `SolverResult` with solution count + all solutions (2-second timeout)
-
-### Solution Matching
-
-`lib/services/solution_matcher.dart` encodes board states as **BigInt** (360 bits: 60 cells × 6 bits/cell). The 9356 classical solutions are preloaded at startup via `loadNormalizedSolutionsAsBigInt()` and matched in O(n) per partial board state.
-
-### Persistence — Drift (SQLite)
-
-`lib/database/settings_database.dart` defines the schema; `settings_database.g.dart` is generated. Tables: `Settings` (key/value JSON), `GameSessions`, `SolutionStats`. Always run `build_runner` after schema changes.
-
-### Settings Model Hierarchy
-
 ```
-AppSettings
-├── UISettings      – color scheme, custom colors, grid lines, animations
-├── GameSettings    – difficulty, hints, timer, haptics
-└── DuelSettings    – player name, duration, win/loss stats
+lib/
+  common/          # modèles et services partagés entre modules
+  classical/       # logique du jeu classique
+  pentoscope/      # module pentoscope (actif)
+  duel/            # mode multijoueur duel (actif)
+  tutorial/        # système de tutoriel YAML (actif)
 ```
 
-### Piece Definitions
+## Modules actifs
 
-All 12 pentomino pieces with their orientations are defined in `lib/common/pentominos.dart`.
+| Module      | État         | Notes |
+|-------------|--------------|-------|
+| classical   | actif        | jeu classique de pentominos |
+| pentoscope  | actif        | drag & drop, snapping magnétique, scoring isométrique |
+| duel        | actif        | multijoueur WebSocket, Cloudflare Durable Objects |
+| tutorial    | actif        | scripting YAML, 47 commandes, ghost pieces |
 
-## Key Files
+## Convention de header OBLIGATOIRE
 
-| File | Role |
-|------|------|
-| `lib/main.dart` | App entry; wraps with Riverpod `ProviderScope` |
-| `lib/pentoscope/pentoscope_provider.dart` | Pentoscope game state & all game actions |
-| `lib/classical/pentomino_game_provider.dart` | Classical mode state |
-| `lib/common/pentomino_game_mixin.dart` | Shared transformation & validation logic |
-| `lib/pentoscope/pentoscope_solver.dart` | Backtracking solver |
-| `lib/services/solution_matcher.dart` | BigInt-based solution matching |
-| `lib/models/app_settings.dart` | Settings data models |
-| `lib/database/settings_database.dart` | Drift schema |
+Tout fichier modifié doit avoir ce header en première ligne :
 
-## Additional Documentation
+```dart
+// lib/[MODULE]/[CHEMIN]/file.dart
+// Modified: YYMMDDHHMMM
+// [TITRE]
+// CHANGEMENTS: (1) [Quoi] ligne X, (2) [Quoi] ligne Y, (3) [Quoi] ligne Z
+```
 
-Large `.md` files in the project root contain deeper design notes:
-- `CURSORDOC.md` — general architecture reference
-- `DOCIA.md` — architecture doc
-- `DUEL_ISOM_ARCH.md` — duel mode & isometry details
-- `MOVEPIECE.md` — piece movement mechanics
+Exemple :
+```dart
+// lib/pentoscope/screens/pentoscope_game_screen.dart
+// Modified: 2603170930
+// Fix drag anchor for placed pieces
+// CHANGEMENTS: (1) Correction selectedMasterAbs ligne 142, (2) Refactor onDragUpdate ligne 198
+```
+
+## Règles impératives
+
+1. **Ne jamais commiter sans demander explicitement** à l'utilisateur
+2. **Toujours écrire les headers** sur chaque fichier modifié
+3. **Expliquer avant d'agir** : décrire ce qui va être modifié avant de toucher au code
+4. **Imports absolus uniquement** — jamais de `../` dans les imports Dart
+5. **0 erreurs de compilation** avant tout commit
+
+## Stack technique
+
+- Flutter SDK (dernière version stable)
+- Riverpod (state management)
+- Cloudflare Workers + Durable Objects (backend duel)
+- WebSocket (communication temps réel multijoueur)
+- BigInt (encodage des solutions de puzzles)
+- SQLite (analyse de dépendances, scripts)
+- YAML (scripting tutorial)
+
+## Développeur
+
+- Paul Marie Larivière — ingénieur systèmes UNIX, ex-IT manager
+- Expérience : Fortran, C/C++, Unix, Dart/Flutter
+- Autres apps publiées : PuzHub, SudokuRix, Luchy
+- Style : approche systémique, architecture propre, comprendre avant d'appliquer
