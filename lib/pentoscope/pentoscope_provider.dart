@@ -316,6 +316,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
         clearSelectedPiece: true,
         clearSelectedPlacedPiece: true,
         clearSelectedCellInPiece: true,
+        clearSelectedMasterAbs: true,
         clearPreview: true,
         validPlacements: [], // ✨ NOUVEAU
       );
@@ -324,6 +325,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
         clearSelectedPiece: true,
         clearSelectedPlacedPiece: true,
         clearSelectedCellInPiece: true,
+        clearSelectedMasterAbs: true,
         clearPreview: true,
         validPlacements: [], // ✨ NOUVEAU
       );
@@ -402,6 +404,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       clearSelectedPiece: true,
       clearSelectedPlacedPiece: true,
       clearSelectedCellInPiece: true,
+      clearSelectedMasterAbs: true,
       isComplete: false,
       validPlacements: [],
       hasPossibleSolution: hasPossibleSolution,
@@ -488,6 +491,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       selectedPositionIndex: positionIndex,
       clearSelectedPlacedPiece: true,
       selectedCellInPiece: defaultCell,
+      clearSelectedMasterAbs: true,
     );
 
     // ✨ PUIS générer les placements valides avec le NOUVEAU plateau
@@ -555,6 +559,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       selectedPlacedPiece: placed,
       selectedPositionIndex: placed.positionIndex,
       selectedCellInPiece: mastercase,
+      selectedMasterAbs: Point(absoluteX, absoluteY),
       clearPreview: true,
     );
 
@@ -630,7 +635,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       }
     }
 
-    // ⏱️ Démarrer le timer
+    // ⏱️ Reset timer sans démarrer
     stopTimer();
     
     state = PentoscopeState(
@@ -652,7 +657,6 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       elapsedSeconds: 0, // ⏱️ Reset timer
     );
     
-    startTimer();
   }
 
   /// 🎮 Démarre un puzzle avec un seed et des pièces spécifiques (mode multiplayer)
@@ -762,15 +766,11 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
 
     final piece = state.selectedPiece!;
     final positionIndex = state.selectedPositionIndex;
+    final wasPlacedPiece = state.selectedPlacedPiece != null;
 
-    int anchorX = gridX;
-    int anchorY = gridY;
-
-    if (state.selectedCellInPiece != null) {
-      // ✅ Ancre calculée avec les coordonnées normalisées (mastercase)
-      anchorX = gridX - state.selectedCellInPiece!.x;
-      anchorY = gridY - state.selectedCellInPiece!.y;
-    }
+    final desiredAnchor = _calculateDesiredAnchorFromDrag(gridX, gridY);
+    int anchorX = desiredAnchor.x;
+    int anchorY = desiredAnchor.y;
 
     if (!state.canPlacePiece(piece, positionIndex, anchorX, anchorY)) {
       return false;
@@ -850,6 +850,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       clearSelectedPiece: true,
       clearSelectedPlacedPiece: true,
       clearSelectedCellInPiece: true,
+      clearSelectedMasterAbs: true,
       clearPreview: true,
       isComplete: isComplete,
       translationCount: newTranslationCount,
@@ -859,7 +860,7 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     );
 
     // ⏱️ Démarrer le timer au premier placement depuis le slider
-    if (_gameTimer == null && state.selectedPlacedPiece == null) {
+    if (_gameTimer == null && !wasPlacedPiece) {
       startTimer();
     }
 
@@ -880,19 +881,11 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
 
     // ✨ CAS 1 - AUCUN PLACEMENT POSSIBLE → ROUGE PARTOUT
     if (state.validPlacements.isEmpty) {
-      // Calculer où serait l'ancre si la mastercase était au doigt
-      int previewX = gridX;
-      int previewY = gridY;
-
-      if (state.selectedCellInPiece != null) {
-        // ✅ Ancre calculée avec les coordonnées normalisées (mastercase)
-        previewX -= state.selectedCellInPiece!.x;
-        previewY -= state.selectedCellInPiece!.y;
-      }
-
+      // Calculer l'ancre en appliquant le vecteur de translation
+      final desiredAnchor = _calculateDesiredAnchorFromDrag(gridX, gridY);
       state = state.copyWith(
-        previewX: previewX,
-        previewY: previewY,
+        previewX: desiredAnchor.x,
+        previewY: desiredAnchor.y,
         isPreviewValid: false, // 🔴 ROUGE
       );
       return;
@@ -1193,17 +1186,25 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       }
     }
 
+    final resolvedSelectedCell = newSelectedCellInPiece ?? _remapSelectedCell(
+      piece: piece,
+      oldIndex: oldIdx,
+      newIndex: newIdx,
+      oldCell: state.selectedCellInPiece,
+    );
+
     state = state.copyWith(
       plateau: newPlateau,
       selectedPlacedPiece: finalPiece,  // ← Mettre à jour!
       placedPieces: updatedPlacedPieces,
       selectedPositionIndex: newIdx,
-      selectedCellInPiece: newSelectedCellInPiece ?? _remapSelectedCell(
-        piece: piece,
-        oldIndex: oldIdx,
-        newIndex: newIdx,
-        oldCell: state.selectedCellInPiece,
-      ),
+      selectedCellInPiece: resolvedSelectedCell,
+      selectedMasterAbs: resolvedSelectedCell == null
+          ? null
+          : Point(
+              finalPiece.gridX + resolvedSelectedCell.x,
+              finalPiece.gridY + resolvedSelectedCell.y,
+            ),
       clearPreview: true,
       isometryCount: state.isometryCount + 1,
       hasPossibleSolution: hasPossibleSolution, // 💡 Mise à jour!
@@ -1442,18 +1443,25 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
       }
     }
 
+    final resolvedSelectedCell = newSelectedCellInPiece ?? _remapSelectedCell(
+      piece: piece,
+      oldIndex: oldIdx,
+      newIndex: newIdx,
+      oldCell: state.selectedCellInPiece,
+    );
+
     state = state.copyWith(
       plateau: newPlateau,
       selectedPlacedPiece: finalPiece,
       placedPieces: updatedPlacedPieces,
       selectedPositionIndex: newIdx,
-      selectedCellInPiece: newSelectedCellInPiece ??
-          _remapSelectedCell(
-            piece: piece,
-            oldIndex: oldIdx,
-            newIndex: newIdx,
-            oldCell: state.selectedCellInPiece,
-          ),
+      selectedCellInPiece: resolvedSelectedCell,
+      selectedMasterAbs: resolvedSelectedCell == null
+          ? null
+          : Point(
+              finalPiece.gridX + resolvedSelectedCell.x,
+              finalPiece.gridY + resolvedSelectedCell.y,
+            ),
       clearPreview: true,
       isometryCount: state.isometryCount + 1,
       hasPossibleSolution: hasPossibleSolution,
@@ -1557,8 +1565,33 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     state = state.copyWith(
       plateau: _rebuildPlateauFromPlacedPieces(),
       clearSelectedPlacedPiece: true,
+      clearSelectedMasterAbs: true,
       clearPreview: true,
     );
+  }
+
+  /// Calcule l'ancre voulue à partir du drag (doigt) en respectant
+  /// l'origine de translation (mastercase sélectionnée).
+  /// - Si pièce placée: vecteur = (doigt - masterAbs), ancre = originGrid + vecteur
+  /// - Sinon: ancre = doigt - mastercase normalisée
+  Point _calculateDesiredAnchorFromDrag(int dragGridX, int dragGridY) {
+    final sp = state.selectedPlacedPiece;
+    final masterAbs = state.selectedMasterAbs;
+
+    if (sp != null && masterAbs != null) {
+      final dx = dragGridX - masterAbs.x;
+      final dy = dragGridY - masterAbs.y;
+      return Point(sp.gridX + dx, sp.gridY + dy);
+    }
+
+    if (state.selectedCellInPiece != null) {
+      return Point(
+        dragGridX - state.selectedCellInPiece!.x,
+        dragGridY - state.selectedCellInPiece!.y,
+      );
+    }
+
+    return Point(dragGridX, dragGridY);
   }
 
   bool _canPlacePieceWithoutChecker(PentoscopePlacedPiece placed) {
@@ -1699,31 +1732,26 @@ class PentoscopeNotifier extends Notifier<PentoscopeState>
     return null;
   }
 
-  /// Trouve la position valide la plus proche du doigt
+  /// Trouve la position valide la plus proche du vecteur de translation
   /// dragGridX/Y = position du doigt sur le plateau
-  /// Retourne la position d'ancre valide la plus proche
-  /// 
-  /// ✅ FIX: On cherche la position où la MASTERCASE serait la plus proche du doigt
-  /// Si pas de mastercase définie, on utilise la première cellule normalisée
+  /// Retourne la position d'ancre valide la plus proche du vecteur
+  ///
+  /// ✅ FIX: On cherche l'ancre la plus proche de l'ancre désirée
+  /// (calculée via le vecteur mastercase -> doigt)
   Point? _findClosestValidPlacement(int dragGridX, int dragGridY) {
     if (state.validPlacements.isEmpty) return null;
     if (state.selectedPiece == null) return null;
 
-    // Déterminer l'offset normalisé de la mastercase (ou 0,0 si pas définie)
-    final mastercaseOffset = state.selectedCellInPiece ?? Point(0, 0);
+    final desiredAnchor = _calculateDesiredAnchorFromDrag(dragGridX, dragGridY);
 
-    // Chercher le placement valide où la mastercase est la plus proche du doigt
+    // Chercher le placement valide le plus proche de l'ancre désirée
     Point closest = state.validPlacements[0];
     double minDistance = double.infinity;
 
     for (final placement in state.validPlacements) {
-      // Calculer où serait la mastercase pour ce placement
-      final mastercaseX = placement.x + mastercaseOffset.x;
-      final mastercaseY = placement.y + mastercaseOffset.y;
-      
-      // Distance entre le doigt et la mastercase
-      final dx = (dragGridX - mastercaseX).toDouble();
-      final dy = (dragGridY - mastercaseY).toDouble();
+      // Distance entre l'ancre désirée et l'ancre candidate
+      final dx = (desiredAnchor.x - placement.x).toDouble();
+      final dy = (desiredAnchor.y - placement.y).toDouble();
       final distance = dx * dx + dy * dy;
 
       if (distance < minDistance) {
@@ -1986,6 +2014,7 @@ class PentoscopeState {
   // Sélection pièce placée
   final PentoscopePlacedPiece? selectedPlacedPiece;
   final Point? selectedCellInPiece; // Mastercase
+  final Point? selectedMasterAbs; // Mastercase absolue à la sélection
 
   // Preview
   final int? previewX;
@@ -2023,6 +2052,7 @@ class PentoscopeState {
     this.piecePositionIndices = const {},
     this.selectedPlacedPiece,
     this.selectedCellInPiece,
+    this.selectedMasterAbs,
     this.previewX,
     this.previewY,
     this.isPreviewValid = false,
@@ -2092,6 +2122,8 @@ class PentoscopeState {
     bool clearSelectedPlacedPiece = false,
     Point? selectedCellInPiece,
     bool clearSelectedCellInPiece = false,
+    Point? selectedMasterAbs,
+    bool clearSelectedMasterAbs = false,
     int? previewX,
     int? previewY,
     bool? isPreviewValid,
@@ -2126,6 +2158,9 @@ class PentoscopeState {
       selectedCellInPiece: clearSelectedCellInPiece
           ? null
           : (selectedCellInPiece ?? this.selectedCellInPiece),
+      selectedMasterAbs: clearSelectedMasterAbs
+          ? null
+          : (selectedMasterAbs ?? this.selectedMasterAbs),
       previewX: clearPreview ? null : (previewX ?? this.previewX),
       previewY: clearPreview ? null : (previewY ?? this.previewY),
       isPreviewValid: clearPreview
