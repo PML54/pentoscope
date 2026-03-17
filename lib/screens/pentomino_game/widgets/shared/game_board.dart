@@ -284,11 +284,6 @@ class GameBoard extends ConsumerWidget {
       }
     }
 
-    // Masquer les cellules de la pièce pendant le drag
-    if (state.isDragging && isSelected) {
-      return Container(color: Colors.grey.shade300);
-    }
-
     // Preview avec support du snap
     if (!isSelected &&
         state.selectedPiece != null &&
@@ -403,8 +398,6 @@ class GameBoard extends ConsumerWidget {
     if (isSelected && state.selectedPiece != null) {
       cellWidget = Draggable<Pento>(
         data: state.selectedPiece!,
-        onDragStarted: () => notifier.setDragging(true),
-        onDragEnd: (_) => notifier.setDragging(false),
         feedback: Material(
           color: Colors.transparent,
           child: PieceRenderer(
@@ -414,7 +407,10 @@ class GameBoard extends ConsumerWidget {
             getPieceColor: (pieceId) => settings.ui.getPieceColor(pieceId),
           ),
         ),
-        childWhenDragging: Container(color: Colors.grey.shade300),
+        childWhenDragging: Opacity(
+          opacity: 0.3,
+          child: cellWidget,
+        ),
         child: GestureDetector(
           onTap: () {
             // Permettre de changer la mastercase sur la même pièce

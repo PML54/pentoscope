@@ -28,7 +28,6 @@ class PentominoGameState {
   final int? previewY; // Position Y de la preview
   final bool isPreviewValid; // La preview est-elle un placement valide ?
   final bool isSnapped; // 🆕 La preview est-elle "aimantée" (snap) ?
-  final bool isDragging; // true pendant le drag d'une pièce placée
 
   // Validation du plateau
   final bool boardIsValid; // true si pas de chevauchement ni débordement
@@ -87,7 +86,6 @@ class PentominoGameState {
     this.previewY,
     this.isPreviewValid = false,
     this.isSnapped = false, // 🆕
-    this.isDragging = false,
     this.solutionsCount,
     this.solvedSolutionIndex, // 🆕
     this.isIsometriesMode = false,
@@ -179,7 +177,6 @@ class PentominoGameState {
     int? previewY,
     bool? isPreviewValid,
     bool? isSnapped, // 🆕
-    bool? isDragging,
     bool clearPreview = false,
     int? solutionsCount,
     int? solvedSolutionIndex, // 🆕
@@ -235,7 +232,6 @@ class PentominoGameState {
           ? false
           : (isPreviewValid ?? this.isPreviewValid),
       isSnapped: clearPreview ? false : (isSnapped ?? this.isSnapped),
-      isDragging: isDragging ?? this.isDragging,
       // 🆕
       solutionsCount: solutionsCount ?? this.solutionsCount,
       solvedSolutionIndex: clearSolvedSolutionIndex
