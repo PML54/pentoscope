@@ -457,8 +457,11 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
 
     if (isSelected && state.selectedPiece != null) {
       // Pièce sélectionnée: draggable
+      final emptyCell = Container(color: Colors.grey.shade300);
       cellWidget = Draggable<Pento>(
         data: state.selectedPiece!,
+        onDragStarted: () => notifier.setDragging(true),
+        onDragEnd: (_) => notifier.setDragging(false),
         feedback: Material(
           color: Colors.transparent,
           child: PieceRenderer(
@@ -472,22 +475,24 @@ class _PentoscopeBoardState extends ConsumerState<PentoscopeBoard> {
             getPieceColor: (pieceId) => settings.ui.getPieceColor(pieceId),
           ),
         ),
-        childWhenDragging: Opacity(opacity: 0.3, child: cellWidget),
-        child: GestureDetector(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            notifier.selectPlacedPiece(
-              state.selectedPlacedPiece!,
-              logicalX,
-              logicalY,
-            );
-          },
-          onDoubleTap: () {
-            HapticFeedback.selectionClick();
-            notifier.applyIsometryRotationTW();
-          },
-          child: cellWidget,
-        ),
+        childWhenDragging: emptyCell,
+        child: state.isDragging
+            ? emptyCell
+            : GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  notifier.selectPlacedPiece(
+                    state.selectedPlacedPiece!,
+                    logicalX,
+                    logicalY,
+                  );
+                },
+                onDoubleTap: () {
+                  HapticFeedback.selectionClick();
+                  notifier.applyIsometryRotationTW();
+                },
+                child: cellWidget,
+              ),
       );
     } else if (isOccupied && !isSelected) {
       // Pièce placée non sélectionnée: sélectionnable

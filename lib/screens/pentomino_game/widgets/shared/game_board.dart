@@ -247,9 +247,18 @@ class GameBoard extends ConsumerWidget {
       final position =
       selectedPiece.piece.orientations[state.selectedPositionIndex];
 
+      // Normalisation identique à absoluteCells
+      int minLocalX = 5, minLocalY = 5;
       for (final cellNum in position) {
-        final localX = (cellNum - 1) % 5;
-        final localY = (cellNum - 1) ~/ 5;
+        final lx = (cellNum - 1) % 5;
+        final ly = (cellNum - 1) ~/ 5;
+        if (lx < minLocalX) minLocalX = lx;
+        if (ly < minLocalY) minLocalY = ly;
+      }
+
+      for (final cellNum in position) {
+        final localX = (cellNum - 1) % 5 - minLocalX;
+        final localY = (cellNum - 1) ~/ 5 - minLocalY;
         final pieceX = selectedPiece.gridX + localX;
         final pieceY = selectedPiece.gridY + localY;
 
@@ -396,8 +405,11 @@ class GameBoard extends ConsumerWidget {
     );
 
     if (isSelected && state.selectedPiece != null) {
+      final emptyCell = Container(color: Colors.grey.shade300);
       cellWidget = Draggable<Pento>(
         data: state.selectedPiece!,
+        onDragStarted: () => notifier.setDragging(true),
+        onDragEnd: (_) => notifier.setDragging(false),
         feedback: Material(
           color: Colors.transparent,
           child: PieceRenderer(
@@ -407,22 +419,20 @@ class GameBoard extends ConsumerWidget {
             getPieceColor: (pieceId) => settings.ui.getPieceColor(pieceId),
           ),
         ),
-        childWhenDragging: Opacity(
-          opacity: 0.3,
-          child: cellWidget,
-        ),
-        child: GestureDetector(
-          onTap: () {
-            // Permettre de changer la mastercase sur la même pièce
-            HapticFeedback.selectionClick();
-            notifier.selectPlacedPiece(state.selectedPlacedPiece!, logicalX, logicalY);
-          },
-          onDoubleTap: () {
-            HapticFeedback.selectionClick();
-            notifier.applyIsometryRotation();
-          },
-          child: cellWidget,
-        ),
+        childWhenDragging: emptyCell,
+        child: state.isDragging
+            ? emptyCell
+            : GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  notifier.selectPlacedPiece(state.selectedPlacedPiece!, logicalX, logicalY);
+                },
+                onDoubleTap: () {
+                  HapticFeedback.selectionClick();
+                  notifier.applyIsometryRotation();
+                },
+                child: cellWidget,
+              ),
       );
     } else if (isOccupied && !isSelected) {
       cellWidget = GestureDetector(

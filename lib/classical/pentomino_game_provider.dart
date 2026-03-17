@@ -411,6 +411,10 @@ class PentominoGameNotifier extends Notifier<PentominoGameState>
     }
   }
 
+  void setDragging(bool value) {
+    state = state.copyWith(isDragging: value);
+  }
+
   /// Efface la surbrillance du slider
   void clearSliderHighlight() {
     state = state.copyWith(clearHighlightedSliderPiece: true);
